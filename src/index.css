@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-color: #fff7f8;
+    --panel-color: #ffffff;
+    --accent-gold: #c59b27;
+    --accent-gold-light: #fef9e7;
+    --text-color: #4a3e35;
+    --text-muted: #8b7d72;
+    --sakura-pink: #f8c3cd;
+    --sakura-soft: #fdf0f2;
+    --sakura-deep: #e06a68;
+    --header-red: #c62828;
+    --card-bg: #ffffff;
+    --search-bg: #f7f3f0;
+    --border-color: rgba(93, 81, 70, 0.12);
+  }
+
+  [data-theme="dark"] {
+    --bg-color: #161517;
+    --panel-color: #222024;
+    --accent-gold: #d4af37;
+    --accent-gold-light: #2c2718;
+    --text-color: #ede7e1;
+    --text-muted: #a39b94;
+    --sakura-pink: #9b2c3a;
+    --sakura-soft: #281a1d;
+    --sakura-deep: #e55353;
+    --header-red: #ef5350;
+    --card-bg: #262429;
+    --search-bg: #2f2c33;
+    --border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+    background-image: radial-gradient(var(--sakura-pink) 0.75px, transparent 0.75px);
+    background-size: 32px 32px;
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sakura-pink);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sakura-deep);
+}

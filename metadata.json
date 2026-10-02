@@ -1,0 +1,6 @@
+{
+  "name": "本丸事记 - 刀剑乱舞手帐与本丸刀账",
+  "description": "专为审神者定制的本丸奏帖事务手帐与本丸刀账册，支持刀剑男士番号登记、刀种流派考录、逸闻随笔、内番当值名册及显现时间轴检索。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
