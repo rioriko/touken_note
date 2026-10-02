@@ -352,13 +352,13 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
-        <div className="px-5 py-4 border-b border-[var(--sakura-pink)]/40 flex items-center justify-between bg-[var(--sakura-soft)]/40">
-          <div className="flex items-center gap-2.5">
-            <BookOpen className="w-5 h-5 text-[var(--header-red)]" />
-            <h2 className="text-lg font-bold text-[var(--header-red)] tracking-wider font-serif">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-[var(--sakura-pink)]/40 flex items-center justify-between bg-[var(--sakura-soft)]/40 gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <BookOpen className="w-5 h-5 text-[var(--header-red)] shrink-0" />
+            <h2 className="text-base sm:text-lg font-bold text-[var(--header-red)] tracking-wider font-serif shrink-0">
               本丸刀账典籍
             </h2>
-            <span className="text-xs text-[var(--text-muted)] ml-2">
+            <span className="text-xs text-[var(--text-muted)] ml-1 sm:ml-2 truncate">
               收录 <strong className="text-[var(--sakura-deep)] font-mono">{records.length}</strong> 振刀剑
             </span>
           </div>

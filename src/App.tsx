@@ -558,9 +558,9 @@ export default function App() {
         <button
           onClick={() => setIsFortuneModalOpen(true)}
           title="聆听近侍今日签文与谏言"
-          className="p-2 rounded-full bg-[var(--panel-color)] border border-[var(--sakura-pink)] shadow-md hover:scale-110 text-xs font-serif text-[var(--sakura-deep)] hover:bg-[var(--sakura-soft)] transition-all cursor-pointer flex items-center justify-center"
+          className="w-8 h-8 rounded-full bg-[var(--panel-color)] border border-[var(--sakura-pink)] shadow-md hover:scale-110 text-xs font-serif font-bold text-[var(--header-red)] hover:bg-[var(--sakura-soft)] transition-all cursor-pointer flex items-center justify-center shrink-0"
         >
-          <span className="text-sm leading-none">🎋</span>
+          <span className="text-xs leading-none">签</span>
         </button>
       </div>
 
