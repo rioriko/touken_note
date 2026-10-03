@@ -1,6 +1,6 @@
 import React from 'react';
-import { BenwanConfig } from '../types';
-import { X, Moon, Sun, Monitor, Download, Upload, ShieldAlert, Sparkles, BookOpen } from 'lucide-react';
+import { BenwanConfig, ColorTheme } from '../types';
+import { X, Moon, Sun, Monitor, Download, Upload, ShieldAlert, Sparkles, BookOpen, Palette, Check } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -12,6 +12,62 @@ interface SettingsModalProps {
   onLoadPresetSwords: () => void;
   showToast: (msg: string) => void;
 }
+
+const COLOR_THEMES: {
+  id: ColorTheme;
+  name: string;
+  tagline: string;
+  lightDesc: string;
+  darkDesc: string;
+  previewClass: string;
+  badgeColor: string;
+}[] = [
+  {
+    id: 'sakura',
+    name: '樱',
+    tagline: '初春盛景 · 樱花本丸',
+    lightDesc: '粉樱落雪与暖白雅致',
+    darkDesc: '玄夜静阑与深绯绯樱',
+    previewClass: 'from-[#fdf0f2] via-[#f8c3cd] to-[#e06a68]',
+    badgeColor: '#e06a68',
+  },
+  {
+    id: 'koubai',
+    name: '红梅',
+    tagline: '踏雪寻梅 · 正红本丸',
+    lightDesc: '正红梅赤与绢白纸本',
+    darkDesc: '漆夜玄炭与炽红火梅',
+    previewClass: 'from-[#fdf0ee] via-[#f5b5b1] to-[#a51d24]',
+    badgeColor: '#a51d24',
+  },
+  {
+    id: 'take',
+    name: '竹',
+    tagline: '空山幽篁 · 翠竹本丸',
+    lightDesc: '低饱和幽篁青与青白宣纸',
+    darkDesc: '墨竹青玄与静夜幽篁翠',
+    previewClass: 'from-[#eff5f0] via-[#bcd5c1] to-[#2d5a3c]',
+    badgeColor: '#2d5a3c',
+  },
+  {
+    id: 'fuji',
+    name: '富士',
+    tagline: '雪山灵峰 · 灵曜本丸',
+    lightDesc: '雪白、雾白、富士浅蓝、山影蓝与富士金',
+    darkDesc: '富士夜空、深蓝灰、冰川蓝与月下金',
+    previewClass: 'from-[#FCFCFA] via-[#B9D4E3] to-[#7FA9C0]',
+    badgeColor: '#7FA9C0',
+  },
+  {
+    id: 'wisteria',
+    name: '紫藤',
+    tagline: '紫藤漫垂 · 幽夜本丸',
+    lightDesc: '靛蓝至紫藤渐变晕染',
+    darkDesc: '玄靛深夜与幽月荧紫',
+    previewClass: 'from-[#f3effc] via-[#d0c2ee] to-[#513693]',
+    badgeColor: '#513693',
+  },
+];
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -115,11 +171,75 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: 日夜交替 (Theme) */}
+          {/* Section 2: 本丸雅意色系 (Color Themes) */}
+          <div className="space-y-3 pb-4 border-b border-[var(--border-color)]">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-[var(--header-red)] text-sm flex items-center gap-1.5 font-serif">
+                <Palette className="w-4 h-4" />
+                本丸景致色调 (五色雅意)
+              </h4>
+              <span className="text-[11px] text-[var(--text-muted)] font-serif">
+                当前：{COLOR_THEMES.find((t) => t.id === (config.colorTheme || 'sakura'))?.name || '樱'}
+              </span>
+            </div>
+
+            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+              自选审神者心仪之庭院色系，白昼与夜阑模式均经过精心配色调校：
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {COLOR_THEMES.map((themeItem) => {
+                const isSelected = (config.colorTheme || 'sakura') === themeItem.id;
+                return (
+                  <button
+                    key={themeItem.id}
+                    type="button"
+                    onClick={() => {
+                      onUpdateConfig({ colorTheme: themeItem.id });
+                      showToast(`已更换本丸景致色调为【${themeItem.name}】`);
+                    }}
+                    className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer relative ${
+                      isSelected
+                        ? 'border-[var(--sakura-deep)] bg-[var(--sakura-soft)] shadow-sm'
+                        : 'border-[var(--border-color)] bg-[var(--search-bg)] hover:border-[var(--sakura-pink)]'
+                    }`}
+                  >
+                    {/* Visual Color Swatch */}
+                    <div
+                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${themeItem.previewClass} shadow-2xs border border-black/10 shrink-0 flex items-center justify-center`}
+                    >
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-white drop-shadow-md stroke-[3]" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="font-serif font-bold text-xs text-[var(--text-color)]">
+                          {themeItem.name}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-serif">
+                          {themeItem.tagline.split('·')[0].trim()}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5 leading-snug truncate">
+                        昼: {themeItem.lightDesc}
+                      </p>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-0.2 leading-snug truncate">
+                        夜: {themeItem.darkDesc}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 2.5: 日夜交替 (Theme Mode) */}
           <div className="space-y-3 pb-4 border-b border-[var(--border-color)]">
             <h4 className="font-bold text-[var(--header-red)] text-sm flex items-center gap-1.5 font-serif">
               <Moon className="w-4 h-4" />
-              日夜交替 (本丸主题)
+              日夜交替 (明暗模式)
             </h4>
             <div className="grid grid-cols-3 gap-2">
               <button

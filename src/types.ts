@@ -62,9 +62,12 @@ export interface DaozhangRecord {
   memoEntries?: DaozhangMemoEntry[]; // 互动小记、刀装问答签文备忘录
 }
 
+export type ColorTheme = 'sakura' | 'koubai' | 'take' | 'fuji' | 'wisteria';
+
 export interface BenwanConfig {
   confirmDelete: boolean;
   theme: 'light' | 'dark' | 'system';
+  colorTheme?: ColorTheme;
   about: string;
   honmaruName?: string; // 自定义本丸名字 (例如: "大和", "浅樱", "相模")
   saniwaName?: string; // 审神者尊号 (例如: "审神者", "主殿")

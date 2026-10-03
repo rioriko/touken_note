@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
 @layer base {
-  :root {
+  /* 默认：1. 樱 (Sakura) - 白昼 */
+  :root,
+  [data-color-theme="sakura"] {
     --bg-color: #fff7f8;
     --panel-color: #ffffff;
     --accent-gold: #c59b27;
@@ -17,20 +19,158 @@
     --border-color: rgba(93, 81, 70, 0.12);
   }
 
-  [data-theme="dark"] {
-    --bg-color: #161517;
-    --panel-color: #222024;
+  /* 1. 樱 (Sakura) - 夜阑 (玄黑与绯樱深粉) */
+  [data-theme="dark"],
+  [data-theme="dark"][data-color-theme="sakura"] {
+    --bg-color: #171417;
+    --panel-color: #231f24;
     --accent-gold: #d4af37;
     --accent-gold-light: #2c2718;
-    --text-color: #ede7e1;
-    --text-muted: #a39b94;
-    --sakura-pink: #9b2c3a;
-    --sakura-soft: #281a1d;
-    --sakura-deep: #e55353;
-    --header-red: #ef5350;
-    --card-bg: #262429;
-    --search-bg: #2f2c33;
-    --border-color: rgba(255, 255, 255, 0.1);
+    --text-color: #ede5e8;
+    --text-muted: #a69a9e;
+    --sakura-pink: #843242;
+    --sakura-soft: #2d1820;
+    --sakura-deep: #e85570;
+    --header-red: #f26682;
+    --card-bg: #272228;
+    --search-bg: #2f2a31;
+    --border-color: rgba(248, 195, 205, 0.15);
+  }
+
+  /* 2. 红梅 (Koubai) - 白昼 (正红梅赤与雪白绢本) */
+  [data-color-theme="koubai"] {
+    --bg-color: #fdf6f5;
+    --panel-color: #ffffff;
+    --accent-gold: #b38600;
+    --accent-gold-light: #fef7e0;
+    --text-color: #452a28;
+    --text-muted: #8c6a66;
+    --sakura-pink: #f5b5b1;
+    --sakura-soft: #fdf0ee;
+    --sakura-deep: #c5221f;
+    --header-red: #a51d24;
+    --card-bg: #ffffff;
+    --search-bg: #f9efee;
+    --border-color: rgba(165, 29, 36, 0.14);
+  }
+
+  /* 2. 红梅 (Koubai) - 夜阑 (漆夜玄炭与炽红火梅) */
+  [data-theme="dark"][data-color-theme="koubai"] {
+    --bg-color: #181313;
+    --panel-color: #251c1c;
+    --accent-gold: #d4a017;
+    --accent-gold-light: #2d2415;
+    --text-color: #f2e7e6;
+    --text-muted: #a89492;
+    --sakura-pink: #802322;
+    --sakura-soft: #301616;
+    --sakura-deep: #d9383a;
+    --header-red: #ff4d4f;
+    --card-bg: #291e1e;
+    --search-bg: #332626;
+    --border-color: rgba(255, 77, 79, 0.18);
+  }
+
+  /* 3. 竹 (Take) - 白昼 (低饱和幽竹翠青与青白宣纸) */
+  [data-color-theme="take"] {
+    --bg-color: #f6f8f5;
+    --panel-color: #ffffff;
+    --accent-gold: #a68a35;
+    --accent-gold-light: #fbf8eb;
+    --text-color: #2d3b32;
+    --text-muted: #6f8074;
+    --sakura-pink: #bcd5c1;
+    --sakura-soft: #eff5f0;
+    --sakura-deep: #447a56;
+    --header-red: #2d5a3c;
+    --card-bg: #ffffff;
+    --search-bg: #edf2ee;
+    --border-color: rgba(45, 90, 60, 0.13);
+  }
+
+  /* 3. 竹 (Take) - 夜阑 (墨竹青玄与静夜幽篁荧光翠) */
+  [data-theme="dark"][data-color-theme="take"] {
+    --bg-color: #121814;
+    --panel-color: #1a221d;
+    --accent-gold: #d4b14e;
+    --accent-gold-light: #242817;
+    --text-color: #e3ece5;
+    --text-muted: #8d9e92;
+    --sakura-pink: #2a5238;
+    --sakura-soft: #142419;
+    --sakura-deep: #52a36d;
+    --header-red: #66bb6a;
+    --card-bg: #1e2821;
+    --search-bg: #25332a;
+    --border-color: rgba(102, 187, 106, 0.16);
+  }
+
+  /* 4. 富士 (Fuji) - 白昼 (用户定制：雪白、雾白、富士浅蓝、山影蓝、富士金、岩蓝灰) */
+  [data-color-theme="fuji"] {
+    --bg-color: #FCFCFA;           /* 雪白主背景 */
+    --panel-color: #ffffff;
+    --accent-gold: #C8A45D;        /* 富士金点缀 */
+    --accent-gold-light: #faf5ea;
+    --text-color: #40515B;         /* 岩蓝灰深色文字 */
+    --text-muted: #6f8390;
+    --sakura-pink: #B9D4E3;        /* 富士浅蓝主色 (边框与点缀线条) */
+    --sakura-soft: #F2F6F8;        /* 雾本次背景 (轻柔卡片底色/按钮底色) */
+    --sakura-deep: #7FA9C0;        /* 山影蓝辅助 (交互高亮与强调) */
+    --header-red: #5887a3;         /* 主标题与主徽墨色 (清透山影蓝) */
+    --card-bg: #ffffff;
+    --search-bg: #F2F6F8;          /* 雾白次背景 */
+    --border-color: rgba(127, 169, 192, 0.22);
+  }
+
+  /* 4. 富士 (Fuji) - 夜阑 (用户定制：富士夜空、深蓝灰、冰川蓝、雪光蓝、月雪白、月下金) */
+  [data-theme="dark"][data-color-theme="fuji"] {
+    --bg-color: #101820;           /* 富士夜空背景 */
+    --panel-color: #182633;        /* 深蓝灰次背景 */
+    --accent-gold: #B99A5A;        /* 月下金点缀 */
+    --accent-gold-light: #2a2416;
+    --text-color: #EEF4F5;         /* 月雪白文字 */
+    --text-muted: #95aab8;
+    --sakura-pink: #2a4358;        /* 深山影夜蓝边框 */
+    --sakura-soft: #14202c;        /* 极深夜蓝底色 */
+    --sakura-deep: #769CB4;        /* 冰川蓝主色 */
+    --header-red: #B7D1DD;         /* 雪光蓝辅助标题与强调文字 */
+    --card-bg: #182633;            /* 深蓝灰卡片底色 */
+    --search-bg: #203142;          /* 稍亮深蓝灰检索框 */
+    --border-color: rgba(183, 209, 221, 0.16);
+  }
+
+  /* 5. 紫藤 (Wisteria) - 白昼 (藤花漫漫：靛青映衬、藤紫至淡紫渐晕) */
+  [data-color-theme="wisteria"] {
+    --bg-color: #f8f6fc;
+    --panel-color: #ffffff;
+    --accent-gold: #b38b30;
+    --accent-gold-light: #fcf8ee;
+    --text-color: #38304c;
+    --text-muted: #7b7194;
+    --sakura-pink: #d0c2ee;
+    --sakura-soft: #f3effc;
+    --sakura-deep: #6f52b5;
+    --header-red: #513693;
+    --card-bg: #ffffff;
+    --search-bg: #f1edfa;
+    --border-color: rgba(81, 54, 147, 0.13);
+  }
+
+  /* 5. 紫藤 (Wisteria) - 夜阑 (夜藤幽月：玄靛深夜、幽光藤紫与星辉) */
+  [data-theme="dark"][data-color-theme="wisteria"] {
+    --bg-color: #15131e;
+    --panel-color: #201c2e;
+    --accent-gold: #d4a942;
+    --accent-gold-light: #2a2517;
+    --text-color: #ebe5f5;
+    --text-muted: #9c91b5;
+    --sakura-pink: #483675;
+    --sakura-soft: #231938;
+    --sakura-deep: #8f70db;
+    --header-red: #aa88f7;
+    --card-bg: #242034;
+    --search-bg: #2e2842;
+    --border-color: rgba(170, 136, 247, 0.18);
   }
 
   body {
@@ -40,7 +180,7 @@
     background-image: radial-gradient(var(--sakura-pink) 0.75px, transparent 0.75px);
     background-size: 32px 32px;
     min-height: 100vh;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
 }
 

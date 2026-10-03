@@ -191,9 +191,9 @@ export default function App() {
     }
   }, []);
 
-  // Sync theme with body/HTML
+  // Sync theme and color theme with body/HTML
   useEffect(() => {
-    const applyTheme = (theme: 'light' | 'dark' | 'system') => {
+    const applyTheme = (theme: 'light' | 'dark' | 'system', colorTheme?: ColorTheme) => {
       let isDark = false;
       if (theme === 'dark') {
         isDark = true;
@@ -205,9 +205,13 @@ export default function App() {
       } else {
         document.documentElement.removeAttribute('data-theme');
       }
+
+      // Apply chosen seasonal color theme (default to 'sakura')
+      const chosenColor = colorTheme || 'sakura';
+      document.documentElement.setAttribute('data-color-theme', chosenColor);
     };
 
-    applyTheme(config.theme);
+    applyTheme(config.theme, config.colorTheme);
 
     if (config.theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -221,7 +225,7 @@ export default function App() {
       mediaQuery.addEventListener('change', listener);
       return () => mediaQuery.removeEventListener('change', listener);
     }
-  }, [config.theme]);
+  }, [config.theme, config.colorTheme]);
 
   // Save changes to localStorage
   const saveNotesToStorage = (updated: Note[]) => {
