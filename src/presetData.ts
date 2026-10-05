@@ -186,7 +186,8 @@ export const INITIAL_NOTES: Note[] = [
   },
 ];
 
-export const INITIAL_NEIBAN: NeibanRecord[] = [
+// 经典内番范本示例数据（供审神者需要时自愿载入参考，默认不强行预置）
+export const CLASSIC_PRESET_NEIBAN: NeibanRecord[] = [
   {
     id: 1727251200001,
     date: '2026-09-25',
@@ -235,3 +236,6 @@ export const INITIAL_NEIBAN: NeibanRecord[] = [
     status: 'completed',
   },
 ];
+
+// 系统初始内番当值名册：默认纯净为空，等待审神者亲自安排当值
+export const INITIAL_NEIBAN: NeibanRecord[] = [];

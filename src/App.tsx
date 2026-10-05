@@ -14,6 +14,7 @@ import {
   INITIAL_NEIBAN,
   INITIAL_PRESET_SWORDS,
   CLASSIC_PRESET_SWORDS,
+  CLASSIC_PRESET_NEIBAN,
 } from './presetData';
 import { Header } from './components/Header';
 import { NotesSection } from './components/NotesSection';
@@ -131,9 +132,15 @@ export default function App() {
 
       const savedNeiban = localStorage.getItem('benwan_neiban_records');
       if (savedNeiban) {
-        setNeibanRecords(migrateNeibanRecords(JSON.parse(savedNeiban)));
+        const parsed = JSON.parse(savedNeiban);
+        // Clean up preset demo neiban: filter out initial demo records (ids: 1727251200001 ~ 1727251200005)
+        // while strictly keeping any records entered by the user
+        const presetNeibanIds = new Set(CLASSIC_PRESET_NEIBAN.map((n) => n.id));
+        const filteredNeiban = migrateNeibanRecords(parsed).filter((r) => !presetNeibanIds.has(r.id));
+        setNeibanRecords(filteredNeiban);
+        localStorage.setItem('benwan_neiban_records', JSON.stringify(filteredNeiban));
       } else {
-        setNeibanRecords(INITIAL_NEIBAN);
+        setNeibanRecords(INITIAL_NEIBAN); // Empty array
       }
 
       const savedDaozhang = localStorage.getItem('benwan_daozhang');
@@ -426,6 +433,12 @@ export default function App() {
     showToast('已成功载入典范刀账 (14振名刃)', 'success');
   };
 
+  // One-click load preset Neiban roster examples
+  const handleLoadPresetNeiban = () => {
+    saveNeibanToStorage(CLASSIC_PRESET_NEIBAN);
+    showToast('已成功载入内番当值示例名册', 'success');
+  };
+
   // Export Data JSON
   const handleExportData = () => {
     const dataToExport = {
@@ -533,6 +546,7 @@ export default function App() {
           onToggleNeiban={handleToggleNeiban}
           onUpdateNeibanStatus={handleUpdateNeibanStatus}
           onDeleteNeiban={handleDeleteNeiban}
+          onLoadPresetNeiban={handleLoadPresetNeiban}
           showToast={showToast}
         />
       </main>
@@ -610,6 +624,7 @@ export default function App() {
         onExportData={handleExportData}
         onImportData={handleImportData}
         onLoadPresetSwords={handleLoadPresetSwords}
+        onLoadPresetNeiban={handleLoadPresetNeiban}
         showToast={showToast}
       />
 

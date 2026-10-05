@@ -35,6 +35,7 @@ interface NotesSectionProps {
   onToggleNeiban: (id: number, targetProgress?: number) => void;
   onUpdateNeibanStatus?: (id: number, status: NeibanStatus, escapeReason?: string) => void;
   onDeleteNeiban: (id: number) => void;
+  onLoadPresetNeiban?: () => void;
   showToast: (msg: string) => void;
 }
 
@@ -49,6 +50,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   onToggleNeiban,
   onUpdateNeibanStatus,
   onDeleteNeiban,
+  onLoadPresetNeiban,
   showToast,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -635,8 +637,23 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
               <tbody className="divide-y divide-[var(--border-color)]">
                 {displayedNeibanRecords.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-gray-400 italic font-serif">
-                      暂无相关当值记录
+                    <td colSpan={6} className="py-8 text-center text-gray-400 font-serif">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <span className="italic">
+                          {activeNeibanFilter !== '全部'
+                            ? `暂无【${activeNeibanFilter}】当值记录`
+                            : '内番名册尚无当值安排。请在上方登记当番，或载入当番示例。'}
+                        </span>
+                        {neibanRecords.length === 0 && onLoadPresetNeiban && (
+                          <button
+                            type="button"
+                            onClick={onLoadPresetNeiban}
+                            className="mt-1 px-3 py-1.5 rounded-lg border border-[var(--sakura-pink)] bg-[var(--sakura-soft)] text-[var(--sakura-deep)] text-xs font-semibold hover:bg-[var(--sakura-pink)]/40 cursor-pointer transition-colors"
+                          >
+                            🌾 一键载入内番示例名册
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -756,6 +773,21 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Table Footer with quick action */}
+          {onLoadPresetNeiban && (
+            <div className="pt-1 flex items-center justify-between text-xs text-[var(--text-muted)] font-serif">
+              <span>当值记录：{displayedNeibanRecords.length} / {neibanRecords.length} 项</span>
+              <button
+                type="button"
+                onClick={onLoadPresetNeiban}
+                className="hover:text-[var(--sakura-deep)] transition-colors cursor-pointer text-[11px]"
+                title="载入五项经典内番示例数据"
+              >
+                载入内番示例名册
+              </button>
+            </div>
+          )}
 
           {/* Escape reason editing modal */}
           {editingEscapeRecord && (

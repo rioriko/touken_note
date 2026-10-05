@@ -10,6 +10,7 @@ interface SettingsModalProps {
   onExportData: () => void;
   onImportData: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onLoadPresetSwords: () => void;
+  onLoadPresetNeiban?: () => void;
   showToast: (msg: string) => void;
 }
 
@@ -77,6 +78,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onExportData,
   onImportData,
   onLoadPresetSwords,
+  onLoadPresetNeiban,
   showToast,
 }) => {
   if (!isOpen) return null;
@@ -321,6 +323,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <BookOpen className="w-3.5 h-3.5" />
                 <span>载入典范刀账</span>
               </button>
+
+              {onLoadPresetNeiban && (
+                <button
+                  onClick={onLoadPresetNeiban}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 font-medium cursor-pointer transition-colors"
+                  title="载入内番当值示例数据"
+                >
+                  <span>🌾</span>
+                  <span>载入内番示例</span>
+                </button>
+              )}
             </div>
           </div>
 
