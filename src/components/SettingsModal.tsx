@@ -1,6 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BenwanConfig, ColorTheme } from '../types';
-import { X, Moon, Sun, Monitor, Download, Upload, ShieldAlert, Sparkles, BookOpen, Palette, Check } from 'lucide-react';
+import {
+  X,
+  Moon,
+  Sun,
+  Monitor,
+  Download,
+  Upload,
+  ShieldAlert,
+  Sparkles,
+  BookOpen,
+  Palette,
+  Check,
+  History,
+  ChevronDown,
+  ChevronUp,
+  Tag,
+} from 'lucide-react';
+import {
+  APP_VERSION,
+  APP_FULL_TITLE,
+  APP_DEFAULT_ABOUT,
+  CHANGELOG_HISTORY,
+} from '../changelogData';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -81,6 +103,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onLoadPresetNeiban,
   showToast,
 }) => {
+  const [showChangelog, setShowChangelog] = useState(false);
   if (!isOpen) return null;
 
   return (
@@ -94,9 +117,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       >
         {/* Header */}
         <div className="px-5 py-4 border-b border-[var(--sakura-pink)]/40 flex items-center justify-between bg-[var(--sakura-soft)]/30">
-          <h3 className="text-base font-bold text-[var(--header-red)] font-serif tracking-wider">
-            本丸常务与配置
-          </h3>
+          <div>
+            <h3 className="text-base font-bold text-[var(--header-red)] font-serif tracking-wider">
+              本丸常务与配置
+            </h3>
+            <span className="text-[10px] text-[var(--text-muted)] font-serif">
+              {APP_FULL_TITLE} · {APP_VERSION}
+            </span>
+          </div>
           <button
             onClick={onClose}
             className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-color)] hover:bg-[var(--search-bg)]"
@@ -107,7 +135,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Content */}
         <div className="p-5 flex-1 flex flex-col gap-5 overflow-y-auto text-xs">
-          {/* Section 0: 本丸名号与审神者尊号 */}
+          {/* Section 0: 本丸名号与审神者尊号 (置顶最先展现) */}
           <div className="space-y-3 pb-4 border-b border-[var(--border-color)]">
             <h4 className="font-bold text-[var(--header-red)] text-sm flex items-center gap-1.5 font-serif">
               <Sparkles className="w-4 h-4" />
@@ -144,6 +172,71 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Official Tool Announcement & Expandable Changelog Banner (置于名册下方) */}
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-[var(--sakura-soft)]/70 to-[var(--search-bg)] border border-[var(--sakura-pink)]/60 shadow-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-bold font-serif text-[var(--header-red)]">
+                <Tag className="w-3.5 h-3.5 text-[var(--sakura-deep)]" />
+                <span>{APP_FULL_TITLE}</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-[var(--sakura-deep)] text-white text-[9px] font-mono">
+                  {APP_VERSION}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowChangelog((prev) => !prev)}
+                className="flex items-center gap-1 text-[11px] font-serif text-[var(--sakura-deep)] hover:underline cursor-pointer font-medium"
+              >
+                <History className="w-3.5 h-3.5" />
+                <span>{showChangelog ? '收起更新日志' : '查看更新日志'}</span>
+                {showChangelog ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            </div>
+            <p className="text-[11px] leading-relaxed text-[var(--text-color)] font-serif opacity-90">
+              专为审神者量身构筑的日常事务随笔、内番名册排班与刀账册管理工具。跨越千年流光，于现代静守本丸岁月。
+            </p>
+
+            {/* Expandable Changelog Component */}
+            {showChangelog && (
+              <div className="mt-3 pt-3 border-t border-[var(--sakura-pink)]/40 space-y-3 animate-fadeIn">
+                <div className="text-[11px] font-bold font-serif text-[var(--text-color)] flex items-center justify-between">
+                  <span>📜 历朝更新日志与版本履历</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono">最新发布：{CHANGELOG_HISTORY[0].version}</span>
+                </div>
+                <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                  {CHANGELOG_HISTORY.map((rel) => (
+                    <div
+                      key={rel.version}
+                      className="p-2.5 rounded-lg bg-[var(--panel-color)] border border-[var(--border-color)] space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 font-serif font-bold text-[var(--text-color)] text-xs">
+                          <span className="font-mono text-[var(--sakura-deep)]">{rel.version}</span>
+                          <span>·</span>
+                          <span>{rel.title}</span>
+                          {rel.badge && (
+                            <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[9px] font-sans">
+                              {rel.badge}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono">{rel.date}</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-[var(--text-color)] opacity-90 font-serif list-none pl-0">
+                        {rel.highlights.map((h, i) => (
+                          <li key={i} className="flex items-start gap-1">
+                            <span className="text-[var(--accent-gold)] shrink-0">•</span>
+                            <span className="leading-snug">{h}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Section 1: 常务 */}
@@ -337,18 +430,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Section 4: 题词 */}
+          {/* Section 4: 题词与铭文 */}
           <div className="space-y-2">
-            <h4 className="font-bold text-[var(--header-red)] text-sm flex items-center gap-1.5 font-serif">
-              <Sparkles className="w-4 h-4" />
-              本丸题词与主殿铭文
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-[var(--header-red)] text-sm flex items-center gap-1.5 font-serif">
+                <Sparkles className="w-4 h-4" />
+                本丸事记题词与主殿铭文
+              </h4>
+              <button
+                type="button"
+                onClick={() => onUpdateConfig({ about: APP_DEFAULT_ABOUT })}
+                className="text-[11px] text-[var(--text-muted)] hover:text-[var(--sakura-deep)] transition-colors cursor-pointer font-serif"
+                title="重置为官方规范题词"
+              >
+                恢复默认
+              </button>
+            </div>
             <textarea
               value={config.about}
               onChange={(e) => onUpdateConfig({ about: e.target.value })}
               rows={3}
-              placeholder="在此写下致主殿或近侍的勉励之辞..."
-              className="w-full p-2.5 rounded-lg border border-[var(--border-color)] bg-[var(--search-bg)] text-[var(--text-color)] leading-relaxed focus:outline-hidden focus:border-[var(--sakura-deep)] font-serif"
+              placeholder="例：本丸事记&#10;审神者专用手帐工具 | 于现代记录"
+              className="w-full p-2.5 rounded-lg border border-[var(--border-color)] bg-[var(--search-bg)] text-[var(--text-color)] leading-relaxed focus:outline-hidden focus:border-[var(--sakura-deep)] font-serif text-xs"
             />
           </div>
         </div>

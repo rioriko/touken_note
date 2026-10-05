@@ -16,6 +16,7 @@ import {
   CLASSIC_PRESET_SWORDS,
   CLASSIC_PRESET_NEIBAN,
 } from './presetData';
+import { APP_DEFAULT_ABOUT } from './changelogData';
 import { Header } from './components/Header';
 import { NotesSection } from './components/NotesSection';
 import { DaozhangModal } from './components/DaozhangModal';
@@ -36,7 +37,7 @@ export default function App() {
   const [config, setConfig] = useState<BenwanConfig>({
     confirmDelete: true,
     theme: 'system',
-    about: '本丸便笺 2.0\n致主殿：刀随心动，武运昌隆。',
+    about: APP_DEFAULT_ABOUT,
     honmaruName: '大和',
     saniwaName: '审神者',
     hasInitializedProfile: false,
@@ -164,6 +165,15 @@ export default function App() {
       const savedConfig = localStorage.getItem('benwan_config');
       if (savedConfig) {
         const parsed = JSON.parse(savedConfig);
+        // If the saved about text was still the old system default, update it to the new title
+        if (
+          !parsed.about ||
+          parsed.about.includes('本丸便笺') ||
+          parsed.about.includes('本丸便笺 2.0') ||
+          parsed.about.includes('审神者自制记事本')
+        ) {
+          parsed.about = APP_DEFAULT_ABOUT;
+        }
         setConfig((prev) => ({ ...prev, ...parsed }));
         if (!parsed.hasInitializedProfile) {
           setIsWelcomeModalOpen(true);
