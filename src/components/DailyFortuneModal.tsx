@@ -85,10 +85,10 @@ export const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({
             </div>
           </div>
 
-          {/* Luck Level Emblem */}
-          <div className="text-center py-2 relative">
-            <div className="text-[11px] text-[var(--text-muted)] font-serif tracking-widest mb-1">
-              今日运势签相
+          {/* Luck Level Emblem with Symbol & Meaning */}
+          <div className="text-center py-2.5 px-4 rounded-xl bg-[var(--search-bg)] border border-[var(--border-color)] relative">
+            <div className="text-[11px] text-[var(--text-muted)] font-serif tracking-widest mb-0.5">
+              今日运势神签
             </div>
             <div
               className="text-4xl sm:text-5xl font-serif font-black tracking-widest my-1 drop-shadow-sm transition-transform hover:scale-105 duration-200"
@@ -96,8 +96,22 @@ export const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({
             >
               【{fortune.luckLevel}】
             </div>
-            <div className="text-[11px] text-[var(--text-muted)] font-serif">
-              {fortune.solarTerm}
+            
+            {/* Symbol & Core Meaning Tag */}
+            <div className="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
+              <span
+                className="text-xs px-2.5 py-0.5 rounded-full font-bold font-serif border"
+                style={{
+                  color: fortune.luckColor,
+                  borderColor: fortune.luckColor,
+                  backgroundColor: fortune.bgLight || 'rgba(0,0,0,0.04)',
+                }}
+              >
+                象征 · {fortune.symbol || '天晴'}
+              </span>
+              <span className="text-xs font-serif text-[var(--text-color)] font-medium">
+                含义：{fortune.meaning || '万事通达'}
+              </span>
             </div>
           </div>
 

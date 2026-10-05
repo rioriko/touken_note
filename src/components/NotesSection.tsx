@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Note, NeibanRecord, NoteTag, NeibanType, NeibanStatus, DaozhangRecord } from '../types';
+import { SACRED_FORTUNE_LIST, SacredFortuneDefinition } from '../dailyFortuneData';
 import {
   Search,
   Sparkles,
@@ -73,11 +74,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   const [inputEscapeReason, setInputEscapeReason] = useState<string>('');
 
   // Divination State
-  const [fortuneResult, setFortuneResult] = useState<{
-    text: string;
-    desc: string;
-    color: string;
-  } | null>(null);
+  const [fortuneResult, setFortuneResult] = useState<SacredFortuneDefinition | null>(null);
   const [isShaking, setIsShaking] = useState(false);
 
   // Calculate Neiban overall progress and school diligence data for Recharts
@@ -245,23 +242,14 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
     return r.type === activeNeibanFilter;
   });
 
-  // Fortune drawing algorithm matching user's original weights
+  // 刀装神签摇签算法：采用12级神签（大吉、中吉、小吉、吉、半吉、末吉、末小吉、平、小凶、半凶、凶、末凶）
   const drawFortune = () => {
     setIsShaking(true);
     setTimeout(() => {
-      const outcomes = [
-        { text: '大吉', color: '#c62828', weight: 10, desc: '灵光乍现！锻刀必出珍稀神刃，刀装皆为特上精锐。' },
-        { text: '中吉', color: '#e65100', weight: 20, desc: '武运亨通。手气颇佳，出阵与锻造皆可期佳品。' },
-        { text: '吉', color: '#f57f17', weight: 30, desc: '平平稳稳。府库资源丰盈，按部就班即可成事。' },
-        { text: '小吉', color: '#9e9d24', weight: 20, desc: '略有微瑕。虽非无双极品，亦足堪本丸一用。' },
-        { text: '凶', color: '#5d5146', weight: 15, desc: '火候未到。资源见底，暂缓锻造与盲目出阵为妙。' },
-        { text: '大凶', color: '#37474f', weight: 5, desc: '厄运当头。今日宜休养生息、照料马匹，忌大动炉火。' },
-      ];
-
-      const sum = outcomes.reduce((acc, cur) => acc + cur.weight, 0);
+      const sum = SACRED_FORTUNE_LIST.reduce((acc, cur) => acc + cur.weight, 0);
       let rand = Math.random() * sum;
-      let selected = outcomes[0];
-      for (const item of outcomes) {
+      let selected = SACRED_FORTUNE_LIST[0];
+      for (const item of SACRED_FORTUNE_LIST) {
         if (rand < item.weight) {
           selected = item;
           break;
@@ -271,7 +259,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
 
       setFortuneResult(selected);
       setIsShaking(false);
-      showToast(`占卜得签：${selected.text}！`);
+      showToast(`神签占得【${selected.level}】· 象征「${selected.symbol}」· ${selected.meaning}`);
     }, 400);
   };
 
@@ -889,16 +877,39 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
           </button>
 
           {fortuneResult && (
-            <div className="mt-4 p-4 rounded-xl bg-[var(--search-bg)] border border-[var(--border-color)] max-w-sm mx-auto animate-fadeIn">
-              <div
-                className="text-4xl font-serif font-black mb-2"
-                style={{ color: fortuneResult.color }}
-              >
-                {fortuneResult.text}
+            <div
+              className="mt-4 p-5 rounded-2xl bg-[var(--search-bg)] border border-[var(--border-color)] max-w-md mx-auto animate-fadeIn shadow-xs space-y-3"
+              style={{
+                borderTop: `4px solid ${fortuneResult.color}`,
+              }}
+            >
+              {/* Fortune Emblem & Symbol */}
+              <div className="flex items-center justify-center gap-3">
+                <div
+                  className="text-4xl font-serif font-black tracking-wider"
+                  style={{ color: fortuneResult.color }}
+                >
+                  【{fortuneResult.level}】
+                </div>
+                <div className="flex flex-col items-start text-left">
+                  <span className="text-xs font-bold font-serif text-[var(--text-color)] px-2 py-0.5 rounded-full bg-[var(--panel-color)] border border-[var(--border-color)]">
+                    象征 · <strong style={{ color: fortuneResult.color }}>{fortuneResult.symbol}</strong>
+                  </span>
+                  <span className="text-[11px] text-[var(--text-muted)] font-serif mt-0.5">
+                    含义：{fortuneResult.meaning}
+                  </span>
+                </div>
               </div>
-              <p className="text-xs leading-relaxed text-[var(--text-color)] font-serif">
-                {fortuneResult.desc}
+
+              {/* Detailed Description */}
+              <p className="text-xs leading-relaxed text-[var(--text-color)] font-serif bg-[var(--panel-color)] p-3 rounded-xl border border-[var(--border-color)]/60 text-left">
+                {fortuneResult.divinationDesc}
               </p>
+
+              {/* Encouragement note */}
+              <div className="text-[11px] text-right text-[var(--text-muted)] font-serif italic">
+                “{fortuneResult.dailyEncouragement}”
+              </div>
             </div>
           )}
         </div>

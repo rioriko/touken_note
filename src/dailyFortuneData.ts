@@ -1,9 +1,162 @@
+export type SacredFortuneLevel =
+  | '大吉'
+  | '中吉'
+  | '小吉'
+  | '吉'
+  | '半吉'
+  | '末吉'
+  | '末小吉'
+  | '平'
+  | '小凶'
+  | '半凶'
+  | '凶'
+  | '末凶';
+
+export interface SacredFortuneDefinition {
+  level: SacredFortuneLevel;
+  symbol: string;      // 象征: 天晴, 玉, 花, 灯, 月, 雪解, 芽, 水面, 薄雾, 缺月, 锈, 断火
+  meaning: string;     // 核心含义: 万事通达, 得偿所愿, 缓慢生长, 等等
+  color: string;       // 雅致主题色
+  bgLight: string;     // 徽章背景色
+  weight: number;      // 抽签权重
+  divinationDesc: string; // 刀装占卜详解
+  dailyEncouragement: string; // 每日晨签寄语
+}
+
+export const SACRED_FORTUNE_MAP: Record<SacredFortuneLevel, SacredFortuneDefinition> = {
+  '大吉': {
+    level: '大吉',
+    symbol: '天晴',
+    meaning: '万事通达',
+    color: '#c62828', // 绯红正色
+    bgLight: 'rgba(198, 40, 40, 0.1)',
+    weight: 12,
+    divinationDesc: '【天晴·万事通达】云开雾散，天光大彻！炉火纯青，刀装皆为特上精锐，出阵连战皆捷。',
+    dailyEncouragement: '云开日朗，所行无阻。主殿尽可放手施为，万事皆随心愿。',
+  },
+  '中吉': {
+    level: '中吉',
+    symbol: '玉',
+    meaning: '得偿所愿',
+    color: '#e65100', // 琉璃暖金
+    bgLight: 'rgba(230, 81, 0, 0.1)',
+    weight: 14,
+    divinationDesc: '【玉·得偿所愿】温润璞玉，渐露华彩。锻造得心应手，所期刀装与功勋必有回响。',
+    dailyEncouragement: '心诚则灵，玉汝于成。静待佳音，所期所盼定得圆满。',
+  },
+  '小吉': {
+    level: '小吉',
+    symbol: '花',
+    meaning: '缓慢生长',
+    color: '#2e7d32', // 春木青翠
+    bgLight: 'rgba(46, 125, 50, 0.1)',
+    weight: 14,
+    divinationDesc: '【花·缓慢生长】含苞待放，静候春信。刀装坚实可用，虽非极品亦蕴含生机。',
+    dailyEncouragement: '花开有时，不急于一时。按部就班积累，枝头自见嫣红。',
+  },
+  '吉': {
+    level: '吉',
+    symbol: '灯',
+    meaning: '有人指路',
+    color: '#d97706', // 提灯暖黄
+    bgLight: 'rgba(217, 119, 6, 0.1)',
+    weight: 15,
+    divinationDesc: '【灯·有人指路】孤夜明灯，照亮幽径。出征或锻造宜多问近侍良策，自得顺遂。',
+    dailyEncouragement: '灯火长明，前路朗照。遇事不妨倾听众刃建言，自有良方。',
+  },
+  '半吉': {
+    level: '半吉',
+    symbol: '月',
+    meaning: '半明半暗',
+    color: '#0284c7', // 霁月天青
+    bgLight: 'rgba(2, 132, 199, 0.1)',
+    weight: 10,
+    divinationDesc: '【月·半明半暗】阴晴圆缺，各安其位。刀装品质半数上乘、半数平常，处之泰然即可。',
+    dailyEncouragement: '明月流转，暗处亦有清辉。得失之间，持平常心方见定力。',
+  },
+  '末吉': {
+    level: '末吉',
+    symbol: '雪解',
+    meaning: '等待转机',
+    color: '#0d9488', // 融雪松石青
+    bgLight: 'rgba(13, 148, 136, 0.1)',
+    weight: 9,
+    divinationDesc: '【雪解·等待转机】寒冬将尽，残雪初融。刀装暂有波折，稍待时辰便现转机。',
+    dailyEncouragement: '冰雪初融，春水方生。眼下困局将消，静守片刻即见生机。',
+  },
+  '末小吉': {
+    level: '末小吉',
+    symbol: '芽',
+    meaning: '尚未显现',
+    color: '#65a30d', // 嫩芽初青
+    bgLight: 'rgba(101, 163, 13, 0.1)',
+    weight: 8,
+    divinationDesc: '【芽·尚未显现】地底萌芽，含蓄未发。所锻刀装潜力内敛，且待后续实战磨砺。',
+    dailyEncouragement: '新芽破土，锋芒微露。虽未名动四方，潜心蓄力自待凌云。',
+  },
+  '平': {
+    level: '平',
+    symbol: '水面',
+    meaning: '守常即可',
+    color: '#475569', // 静水天蓝灰
+    bgLight: 'rgba(71, 85, 105, 0.1)',
+    weight: 8,
+    divinationDesc: '【水面·守常即可】风平浪静，不起波澜。普通刀装照常配备，恪守本分，不求奇功。',
+    dailyEncouragement: '心如止水，波澜不惊。按常理处本丸事务，无惊无险即是清福。',
+  },
+  '小凶': {
+    level: '小凶',
+    symbol: '薄雾',
+    meaning: '判断失误',
+    color: '#78716c', // 迷雾霭灰
+    bgLight: 'rgba(120, 113, 108, 0.1)',
+    weight: 4,
+    divinationDesc: '【薄雾·判断失误】雾气障目，难辨虚实。刀装配比或有差错，宜复查配方后再动炉火。',
+    dailyEncouragement: '雾气迷离，慎勿轻信初感。三思而定计，自可避开疏漏。',
+  },
+  '半凶': {
+    level: '半凶',
+    symbol: '缺月',
+    meaning: '有所不足',
+    color: '#64748b', // 缺角冷夜灰
+    bgLight: 'rgba(100, 116, 139, 0.1)',
+    weight: 3,
+    divinationDesc: '【缺月·有所不足】器物有憾，砥石稍欠。刀装略有残损或兵力折损，宜及时修补。',
+    dailyEncouragement: '世事难求全美，缺憾处乃精进之机。固本培元，查漏补缺。',
+  },
+  '凶': {
+    level: '凶',
+    symbol: '锈',
+    meaning: '停滞、消耗',
+    color: '#b45309', // 赤铁重锈色
+    bgLight: 'rgba(180, 83, 9, 0.1)',
+    weight: 2,
+    divinationDesc: '【锈·停滞、消耗】锋芒积锈，虚掷粮草。锻造徒耗资源，宜暂歇炉火、保养佩刀。',
+    dailyEncouragement: '久战易疲，空耗无益。今日宜闭门研墨、沐浴理装，切忌冒进。',
+  },
+  '末凶': {
+    level: '末凶',
+    symbol: '断火',
+    meaning: '旧事未了',
+    color: '#4c1d95', // 残烬玄紫
+    bgLight: 'rgba(76, 29, 149, 0.1)',
+    weight: 1,
+    divinationDesc: '【断火·旧事未了】灶火骤歇，余烬尚存。先理清积压政务旧案，方可再谋新篇。',
+    dailyEncouragement: '旧事未了，何开新局？收束往日羁绊，重燃炉火方见光明。',
+  },
+};
+
+export const SACRED_FORTUNE_LIST = Object.values(SACRED_FORTUNE_MAP);
+
 export interface DailyFortune {
   dateStr: string; // e.g. "2026年10月01日 星期四"
   lunarDateStr: string; // e.g. "丙申年 仲秋 廿一"
   solarTerm?: string; // 节气或吉相
-  luckLevel: '大吉' | '中吉' | '吉' | '小吉' | '末吉';
+  luckLevel: SacredFortuneLevel;
+  symbol: string;      // 象征: 天晴, 玉, 花...
+  meaning: string;     // 核心含义: 万事通达, 得偿所愿...
   luckColor: string; // color code
+  bgLight?: string;
   quote: string; // 箴言
   quoteSpeaker: string; // 发言刀男
   characterTitle: string; // 刀男称号或身份
@@ -151,26 +304,22 @@ export function generateDailyFortune(
     return x - Math.floor(x);
   };
 
-  const luckLevels: ('大吉' | '中吉' | '吉' | '小吉' | '末吉')[] = [
-    '大吉',
-    '大吉',
-    '中吉',
-    '中吉',
-    '吉',
-    '吉',
-    '小吉',
-  ];
-  const luckColors = {
-    '大吉': '#c62828', // header red
-    '中吉': '#e65100', // orange
-    '吉': '#f57f17', // amber
-    '小吉': '#558b2f', // green
-    '末吉': '#5d5146', // muted
-  };
+  // 12级神签加权抽选
+  const totalFortuneWeight = SACRED_FORTUNE_LIST.reduce((sum, item) => sum + item.weight, 0);
+  let fortuneRandVal = pseudoRand(seed) * totalFortuneWeight;
+  let fortuneDef = SACRED_FORTUNE_LIST[0];
+  for (const item of SACRED_FORTUNE_LIST) {
+    if (fortuneRandVal < item.weight) {
+      fortuneDef = item;
+      break;
+    }
+    fortuneRandVal -= item.weight;
+  }
 
-  const luckIndex = Math.floor(pseudoRand(seed) * luckLevels.length);
-  const luckLevel = luckLevels[luckIndex];
-  const luckColor = luckColors[luckLevel];
+  const luckLevel = fortuneDef.level;
+  const luckColor = fortuneDef.color;
+  const luckSymbol = fortuneDef.symbol;
+  const luckMeaning = fortuneDef.meaning;
 
   // 查找对应近侍的箴言
   const charData = SWORD_CHARACTER_QUOTES[asstName];
@@ -220,14 +369,17 @@ export function generateDailyFortune(
   return {
     dateStr: `${year}年${String(month).padStart(2, '0')}月${String(day).padStart(2, '0')}日 ${dayOfWeek}`,
     lunarDateStr,
-    solarTerm: '武运昌隆 · 剑气冲霄',
+    solarTerm: `神签象征 · 【${luckSymbol}】`,
     luckLevel,
+    symbol: luckSymbol,
+    meaning: luckMeaning,
     luckColor,
+    bgLight: fortuneDef.bgLight,
     quote,
     quoteSpeaker: asstName,
     characterTitle,
     goodFor,
     badFor,
-    encouragement: '万事顺遂，愿主公今日武运恒昌，心想事成。',
+    encouragement: fortuneDef.dailyEncouragement,
   };
 }
