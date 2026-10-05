@@ -1,6 +1,7 @@
 import { DaozhangRecord, NeibanRecord, Note } from './types';
 
-export const INITIAL_PRESET_SWORDS: DaozhangRecord[] = [
+// 预设经典刀剑范本（可供用户在需要时自愿点击“载入经典刀剑范本”引入，默认不强行预置）
+export const CLASSIC_PRESET_SWORDS: DaozhangRecord[] = [
   {
     id: 'dz-003',
     number: 'No.003',
@@ -154,6 +155,9 @@ export const INITIAL_PRESET_SWORDS: DaozhangRecord[] = [
     notes: '备前长船派始祖光忠所作。伊达政宗斩杀近侍时连同青铜烛台一并削断。注重仪容帅气，擅长本丸厨艺。',
   },
 ];
+
+// 系统初始刀账：默认纯净为空，由审神者亲自登用显现
+export const INITIAL_PRESET_SWORDS: DaozhangRecord[] = [];
 
 export const INITIAL_NOTES: Note[] = [
   {

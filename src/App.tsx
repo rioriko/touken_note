@@ -13,6 +13,7 @@ import {
   INITIAL_NOTES,
   INITIAL_NEIBAN,
   INITIAL_PRESET_SWORDS,
+  CLASSIC_PRESET_SWORDS,
 } from './presetData';
 import { Header } from './components/Header';
 import { NotesSection } from './components/NotesSection';
@@ -138,16 +139,19 @@ export default function App() {
       const savedDaozhang = localStorage.getItem('benwan_daozhang');
       if (savedDaozhang) {
         const parsed = JSON.parse(savedDaozhang);
-        // Clean up user requested removal: "no.0111 古备前"
+        // Clean up preset swords: remove any swords that belong to the initial demo set (ids in CLASSIC_PRESET_SWORDS)
+        // while strictly keeping all swords created by the user (custom IDs like 'dz-17...').
+        const classicPresetIds = new Set(CLASSIC_PRESET_SWORDS.map((s) => s.id));
         const filtered = migrateDaozhangRecords(parsed).filter(
           (r) =>
+            !classicPresetIds.has(r.id) &&
             !r.number.toLowerCase().includes('0111') &&
             !(r.name.includes('古备前') || (r.school === '古备前' && r.number.includes('0111')))
         );
         setDaozhangRecords(filtered);
         localStorage.setItem('benwan_daozhang', JSON.stringify(filtered));
       } else {
-        setDaozhangRecords(INITIAL_PRESET_SWORDS);
+        setDaozhangRecords(INITIAL_PRESET_SWORDS); // Empty array
       }
 
       const savedConfig = localStorage.getItem('benwan_config');
@@ -416,9 +420,9 @@ export default function App() {
     saveDaozhangToStorage(updated);
   };
 
-  // One-click load preset swords (14 classic Touken Ranbu swords)
+  // One-click load preset swords (classic Touken Ranbu swords)
   const handleLoadPresetSwords = () => {
-    saveDaozhangToStorage(INITIAL_PRESET_SWORDS);
+    saveDaozhangToStorage(CLASSIC_PRESET_SWORDS);
     showToast('已成功载入典范刀账 (14振名刃)', 'success');
   };
 
