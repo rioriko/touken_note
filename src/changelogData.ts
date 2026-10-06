@@ -7,8 +7,8 @@ export interface VersionRelease {
 }
 
 export const APP_VERSION = 'v1.3';
-export const APP_FULL_TITLE = '本丸事记 - 审神者专用手帐工具';
-export const APP_DEFAULT_ABOUT = '本丸事记\n审神者专用手帐工具 | 于现代记录';
+export const APP_FULL_TITLE = '本丸手札 - 审神者专用手帐工具';
+export const APP_DEFAULT_ABOUT = '本丸手札\n审神者专用手帐工具 | 于现代记录';
 
 export const CHANGELOG_HISTORY: VersionRelease[] = [
   {

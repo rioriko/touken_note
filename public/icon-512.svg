@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient: Deep Night Sky (Dark Indigo to Midnight Navy) -->
+    <linearGradient id="bgNight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161b33"/>
+      <stop offset="45%" stop-color="#0f1123"/>
+      <stop offset="100%" stop-color="#060812"/>
+    </linearGradient>
+
+    <!-- Gold Foil Lustre Gradient -->
+    <linearGradient id="mikazukiGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff5cf"/>
+      <stop offset="25%" stop-color="#f6d375"/>
+      <stop offset="60%" stop-color="#d9a536"/>
+      <stop offset="100%" stop-color="#ba821c"/>
+    </linearGradient>
+
+    <!-- Subtle Starlight / Nebula Glow -->
+    <radialGradient id="moonAura" cx="50%" cy="46%" r="52%">
+      <stop offset="0%" stop-color="#d9a536" stop-opacity="0.22"/>
+      <stop offset="50%" stop-color="#3d406b" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- iOS / App Base Smooth Rounded Square -->
+  <rect width="512" height="512" rx="115" fill="url(#bgNight)"/>
+  <rect width="512" height="512" rx="115" fill="url(#moonAura)"/>
+
+  <!-- Delicate Outer Star Ring (Thin golden celestial halo) -->
+  <circle cx="256" cy="242" r="214" fill="none" stroke="url(#mikazukiGold)" stroke-width="1.8" stroke-opacity="0.35"/>
+  <circle cx="256" cy="242" r="206" fill="none" stroke="url(#mikazukiGold)" stroke-width="0.8" stroke-dasharray="3,6" stroke-opacity="0.5"/>
+
+  <!-- Three Micro Stars floating in the night sky -->
+  <circle cx="118" cy="112" r="2.5" fill="#f6d375" opacity="0.6"/>
+  <circle cx="396" cy="120" r="2" fill="#f6d375" opacity="0.5"/>
+  <circle cx="370" cy="380" r="1.8" fill="#f6d375" opacity="0.4"/>
+
+  <!-- ================= MIKAZUKI MUNECHIKA CREST (三日月宗近 刀纹) ================= -->
+  <!-- Centered geometric precision replication of the double crescent and bottom star/dot -->
+  <g transform="translate(0, -6)">
+    <!-- 1. Outer Crescent (大新月) -->
+    <path d="M 148 404 
+             C 72 328, 72 178, 168 98 
+             C 220 54, 292 54, 344 98 
+             C 440 178, 440 328, 364 404 
+             C 416 332, 416 196, 332 126 
+             C 288 90, 224 90, 180 126 
+             C 96 196, 96 332, 148 404 Z" 
+          fill="url(#mikazukiGold)"/>
+
+    <!-- 2. Inner Crescent (内新月) -->
+    <path d="M 180 376 
+             C 124 316, 124 200, 196 142 
+             C 232 112, 280 112, 316 142 
+             C 388 200, 388 316, 332 376 
+             C 368 318, 368 214, 308 166 
+             C 278 142, 234 142, 204 166 
+             C 144 214, 144 318, 180 376 Z" 
+          fill="url(#mikazukiGold)"/>
+
+    <!-- 3. Bottom Central Dot (新月下星曜·垂露宝珠) -->
+    <circle cx="256" cy="412" r="14" fill="url(#mikazukiGold)"/>
+
+    <!-- Tiny glowing center core -->
+    <circle cx="256" cy="412" r="6" fill="#fff9e6" opacity="0.85"/>
+  </g>
+
+  <!-- Elegant App Bottom Label: "本丸手札" in gold serif -->
+  <text x="256" y="478" font-family="'Noto Serif SC', 'Songti SC', serif" font-size="19" font-weight="600" fill="url(#mikazukiGold)" text-anchor="middle" letter-spacing="7" opacity="0.9">本丸手札</text>
+</svg>

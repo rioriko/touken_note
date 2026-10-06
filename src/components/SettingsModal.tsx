@@ -16,6 +16,8 @@ import {
   ChevronDown,
   ChevronUp,
   Tag,
+  Smartphone,
+  Share2,
 } from 'lucide-react';
 import {
   APP_VERSION,
@@ -237,6 +239,57 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Section: 手机桌面App封面与封装 */}
+          <div className="space-y-3 pb-4 border-b border-[var(--border-color)]">
+            <h4 className="font-bold text-[var(--header-red)] text-sm flex items-center gap-1.5 font-serif">
+              <Smartphone className="w-4 h-4" />
+              手机 App 桌面封装与封面
+            </h4>
+
+            <div className="p-3.5 rounded-xl bg-[var(--search-bg)] border border-[var(--border-color)] space-y-3">
+              <div className="flex items-center gap-3">
+                {/* Visual Icon Preview */}
+                <div className="w-14 h-14 rounded-2xl shadow-md border border-[var(--sakura-pink)] overflow-hidden shrink-0 bg-[#0f1123] flex items-center justify-center p-0.5">
+                  <img
+                    src="/icon-192.svg"
+                    alt="本丸手札 App 图标 - 三日月宗近刀纹"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-serif font-black text-sm text-[var(--text-color)]">
+                      本丸手札
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded bg-[var(--sakura-soft)] text-[var(--sakura-deep)] text-[10px] font-mono">
+                      桌面应用名
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-muted)] font-serif mt-0.5 leading-tight">
+                    以「三日月宗近」金箔双新月刀纹与静谧夜空为徽。添加到桌面后，将以全屏沉浸独立 App 模式运行，无浏览器多余边框。
+                  </p>
+                </div>
+              </div>
+
+              {/* Install guide tip box */}
+              <div className="p-2.5 rounded-lg bg-[var(--panel-color)] border border-[var(--border-color)] text-[11px] font-serif space-y-1.5 text-[var(--text-color)] opacity-95">
+                <div className="flex items-center gap-1 font-bold text-[var(--header-red)]">
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>如何一键“添加到手机主屏幕”？</span>
+                </div>
+                <div className="space-y-1 pl-1 text-[11px] leading-relaxed">
+                  <p>
+                    • <strong>苹果 iPhone / iPad (Safari 浏览器)</strong>：点击底部的「<strong>分享</strong>」按钮（带箭头的方框）➔ 往下滑动并选择「<strong>添加到主屏幕</strong>」➔ 点击「添加」。
+                  </p>
+                  <p>
+                    • <strong>安卓设备 (Chrome / 手机自带浏览器)</strong>：点击右上角「<strong>⋮ 菜单</strong>」➔ 选择「<strong>安装应用</strong>」或「<strong>添加到主屏幕</strong>」。
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Section 1: 常务 */}

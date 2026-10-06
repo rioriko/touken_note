@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="bgNight192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161b33"/>
+      <stop offset="45%" stop-color="#0f1123"/>
+      <stop offset="100%" stop-color="#060812"/>
+    </linearGradient>
+
+    <linearGradient id="mikazukiGold192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff5cf"/>
+      <stop offset="25%" stop-color="#f6d375"/>
+      <stop offset="60%" stop-color="#d9a536"/>
+      <stop offset="100%" stop-color="#ba821c"/>
+    </linearGradient>
+  </defs>
+
+  <!-- iOS / App Base Smooth Rounded Square -->
+  <rect width="192" height="192" rx="44" fill="url(#bgNight192)"/>
+
+  <!-- Halo Ring -->
+  <circle cx="96" cy="91" r="80" fill="none" stroke="url(#mikazukiGold192)" stroke-width="0.8" stroke-opacity="0.4"/>
+
+  <!-- MIKAZUKI MUNECHIKA CREST -->
+  <g transform="translate(0, -3) scale(0.375)">
+    <!-- Outer Crescent -->
+    <path d="M 148 404 
+             C 72 328, 72 178, 168 98 
+             C 220 54, 292 54, 344 98 
+             C 440 178, 440 328, 364 404 
+             C 416 332, 416 196, 332 126 
+             C 288 90, 224 90, 180 126 
+             C 96 196, 96 332, 148 404 Z" 
+          fill="url(#mikazukiGold192)"/>
+
+    <!-- Inner Crescent -->
+    <path d="M 180 376 
+             C 124 316, 124 200, 196 142 
+             C 232 112, 280 112, 316 142 
+             C 388 200, 388 316, 332 376 
+             C 368 318, 368 214, 308 166 
+             C 278 142, 234 142, 204 166 
+             C 144 214, 144 318, 180 376 Z" 
+          fill="url(#mikazukiGold192)"/>
+
+    <!-- Bottom Dot -->
+    <circle cx="256" cy="412" r="14" fill="url(#mikazukiGold192)"/>
+    <circle cx="256" cy="412" r="6" fill="#fff9e6" opacity="0.85"/>
+  </g>
+
+  <!-- Title Bottom -->
+  <text x="96" y="179" font-family="'Noto Serif SC', serif" font-size="9" font-weight="600" fill="url(#mikazukiGold192)" text-anchor="middle" letter-spacing="3" opacity="0.95">本丸手札</text>
+</svg>
