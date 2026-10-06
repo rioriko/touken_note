@@ -6,16 +6,26 @@ export interface VersionRelease {
   highlights: string[];
 }
 
-export const APP_VERSION = 'v1.3';
+export const APP_VERSION = 'v1.3.01';
 export const APP_FULL_TITLE = '本丸手札 - 审神者专用手帐工具';
 export const APP_DEFAULT_ABOUT = '本丸手札\n审神者专用手帐工具 | 于现代记录';
 
 export const CHANGELOG_HISTORY: VersionRelease[] = [
   {
+    version: 'v1.3.01',
+    title: '三日月刀纹移动端专属封面与手机主屏幕封装',
+    date: '2026年10月',
+    badge: '当前版本',
+    highlights: [
+      '🌙 三日月宗近刀纹专属 App Icon：精准还原天下五剑名刃之双重弦月与垂露金星，衬以夜空靛青底色与月华流金。',
+      '📱 手机主屏幕 App 级独立封装：配置标准 PWA 规范，桌面应用名统一为「本丸手札」，支持无浏览器地址栏的全屏沉浸体验。',
+      '🍎 iOS Safari 与 GitHub Pages 适配：全面生成 180x180 苹果视网膜高清 PNG 触控图标，修复二级子目录相对路径，告别404与白边。',
+    ],
+  },
+  {
     version: 'v1.3',
     title: '御宝物库上线与ins风拍立得回廊挂饰墙',
     date: '2026年10月',
-    badge: '当前版本',
     highlights: [
       '🎁 御宝物库（TreasureGallery）：内置于刀账典籍「登用新刃」左侧，配以典雅礼匣图标，支持一键切换展厅。',
       '🖼️ ins风拍立得照片挂饰墙：采用CSS Grid自适应错落布局，呈现和风胶带挂饰、拍立得白边、微旋转倾角与悬停立体浮空阴影。',
