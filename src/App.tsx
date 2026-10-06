@@ -29,6 +29,7 @@ import { WelcomeModal } from './components/WelcomeModal';
 import { DailyFortuneModal } from './components/DailyFortuneModal';
 import { generateDailyFortune, DailyFortune } from './dailyFortuneData';
 import { ToastContainer, ToastMessage } from './components/Toast';
+import { SwordMonLoader } from './components/SwordMonLoader';
 import { UserCheck, Sparkles } from 'lucide-react';
 
 export default function App() {
@@ -61,6 +62,10 @@ export default function App() {
   const [dailyFortune, setDailyFortune] = useState<DailyFortune>(() =>
     generateDailyFortune('加州清光', '打刀')
   );
+
+  // Ceremonial Sword Mon Loading state (App startup and large data imports)
+  const [isAppInitializing, setIsAppInitializing] = useState(true);
+  const [dataSwitchingMessage, setDataSwitchingMessage] = useState<string | null>(null);
 
   // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -227,6 +232,11 @@ export default function App() {
       }
     } catch (e) {
       console.error('Failed to load local data', e);
+    } finally {
+      // Smooth ceremonial entrance transition
+      setTimeout(() => {
+        setIsAppInitializing(false);
+      }, 700);
     }
   }, []);
 
@@ -483,14 +493,22 @@ export default function App() {
 
   // One-click load preset swords (classic Touken Ranbu swords)
   const handleLoadPresetSwords = () => {
-    saveDaozhangToStorage(CLASSIC_PRESET_SWORDS);
-    showToast('已成功载入典范刀账 (14振名刃)', 'success');
+    setDataSwitchingMessage('正在开卷呈纳典范刀账名录...');
+    setTimeout(() => {
+      saveDaozhangToStorage(CLASSIC_PRESET_SWORDS);
+      setDataSwitchingMessage(null);
+      showToast('已成功载入典范刀账 (14振名刃)', 'success');
+    }, 550);
   };
 
   // One-click load preset Neiban roster examples
   const handleLoadPresetNeiban = () => {
-    saveNeibanToStorage(CLASSIC_PRESET_NEIBAN);
-    showToast('已成功载入内番当值示例名册', 'success');
+    setDataSwitchingMessage('正在排布内番当值典范名册...');
+    setTimeout(() => {
+      saveNeibanToStorage(CLASSIC_PRESET_NEIBAN);
+      setDataSwitchingMessage(null);
+      showToast('已成功载入内番当值示例名册', 'success');
+    }, 550);
   };
 
   // Export Data JSON
@@ -520,31 +538,36 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setDataSwitchingMessage('正在检视并归拢本丸历史卷宗...');
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const imported = JSON.parse(event.target?.result as string);
-        if (imported.notes && Array.isArray(imported.notes)) {
-          saveNotesToStorage(imported.notes);
-        }
-        if (imported.neibanRecords && Array.isArray(imported.neibanRecords)) {
-          saveNeibanToStorage(imported.neibanRecords);
-        }
-        if (imported.daozhangRecords && Array.isArray(imported.daozhangRecords)) {
-          saveDaozhangToStorage(migrateDaozhangRecords(imported.daozhangRecords));
-        }
-        if (imported.treasures && Array.isArray(imported.treasures)) {
-          saveTreasuresToStorage(imported.treasures);
-        }
-        if (imported.config) {
-          handleUpdateConfig(imported.config);
-        }
-        if (imported.assistant) {
-          handleSaveAssistant(imported.assistant);
-        }
-        showToast('本丸卷宗导入成功！', 'success');
-        setIsSettingsOpen(false);
+        setTimeout(() => {
+          if (imported.notes && Array.isArray(imported.notes)) {
+            saveNotesToStorage(imported.notes);
+          }
+          if (imported.neibanRecords && Array.isArray(imported.neibanRecords)) {
+            saveNeibanToStorage(imported.neibanRecords);
+          }
+          if (imported.daozhangRecords && Array.isArray(imported.daozhangRecords)) {
+            saveDaozhangToStorage(migrateDaozhangRecords(imported.daozhangRecords));
+          }
+          if (imported.treasures && Array.isArray(imported.treasures)) {
+            saveTreasuresToStorage(imported.treasures);
+          }
+          if (imported.config) {
+            handleUpdateConfig(imported.config);
+          }
+          if (imported.assistant) {
+            handleSaveAssistant(imported.assistant);
+          }
+          setDataSwitchingMessage(null);
+          showToast('本丸卷宗导入成功！', 'success');
+          setIsSettingsOpen(false);
+        }, 600);
       } catch (err) {
+        setDataSwitchingMessage(null);
         showToast('导入失败：卷宗文件格式不正确', 'warning');
       }
     };
@@ -576,6 +599,24 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col relative selection:bg-[var(--sakura-pink)] selection:text-[var(--text-color)]">
       <ToastContainer toasts={toasts} />
+
+      {/* Ceremonial Startup Sword Mon Loading Stage */}
+      {isAppInitializing && (
+        <SwordMonLoader
+          size="fullscreen"
+          text={`${config.honmaruName || '本丸'}手札·敬启`}
+          subtext="跨越千年流光 · 审神者就任记录册展开中..."
+        />
+      )}
+
+      {/* Ceremonial Data Switching Overlay */}
+      {dataSwitchingMessage && (
+        <SwordMonLoader
+          size="fullscreen"
+          text={dataSwitchingMessage}
+          subtext="卷宗调阅中 · 请稍候..."
+        />
+      )}
 
       {/* Top Header */}
       <Header

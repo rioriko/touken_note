@@ -6,16 +6,26 @@ export interface VersionRelease {
   highlights: string[];
 }
 
-export const APP_VERSION = 'v1.3.01';
+export const APP_VERSION = 'v1.3.02';
 export const APP_FULL_TITLE = '本丸手札 - 审神者专用手帐工具';
 export const APP_DEFAULT_ABOUT = '本丸手札\n审神者专用手帐工具 | 于现代记录';
 
 export const CHANGELOG_HISTORY: VersionRelease[] = [
   {
+    version: 'v1.3.02',
+    title: '「三日月金箔刀纹旋转」仪式感开屏与数据流转动效',
+    date: '2026年10月',
+    badge: '当前版本',
+    highlights: [
+      '✨ 三日月金箔刀纹优雅旋转加载器（SwordMonLoader）：引入外环星轨逆向慢旋、内环双月流金顺时针平滑自旋与灵动星晕呼吸动效。',
+      '⛩️ 就任开卷仪式感：初次点开或重新载入应用时，浮现【本丸手札·敬启】仪式微光舞台，随和风字样平滑淡入主幕。',
+      '📜 大宗卷宗调阅沉浸体验：在载入典范刀账、内番名册示例或导入历史卷宗数据流转时，伴随刀纹运转与状态吟咏。',
+    ],
+  },
+  {
     version: 'v1.3.01',
     title: '三日月刀纹移动端专属封面与手机主屏幕封装',
     date: '2026年10月',
-    badge: '当前版本',
     highlights: [
       '🌙 三日月宗近刀纹专属 App Icon：精准还原天下五剑名刃之双重弦月与垂露金星，衬以夜空靛青底色与月华流金。',
       '📱 手机主屏幕 App 级独立封装：配置标准 PWA 规范，桌面应用名统一为「本丸手札」，支持无浏览器地址栏的全屏沉浸体验。',
