@@ -25,6 +25,7 @@ import {
   APP_DEFAULT_ABOUT,
   CHANGELOG_HISTORY,
 } from '../changelogData';
+import { MikazukiIcon } from './MikazukiIcon';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -250,27 +251,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <div className="p-3.5 rounded-xl bg-[var(--search-bg)] border border-[var(--border-color)] space-y-3">
               <div className="flex items-center gap-3">
-                {/* Visual Icon Preview */}
-                <div className="w-14 h-14 rounded-2xl shadow-md border border-[var(--sakura-pink)] overflow-hidden shrink-0 bg-[#0f1123] flex items-center justify-center p-0.5">
-                  <img
-                    src="/icon-192.svg"
-                    alt="本丸手札 App 图标 - 三日月宗近刀纹"
-                    className="w-full h-full object-contain"
-                  />
+                {/* 100% Reliable Inline Vector Icon Preview */}
+                <div className="w-13 h-13 rounded-2xl shadow-md border border-[var(--sakura-pink)] overflow-hidden shrink-0 bg-[#0f1123] flex items-center justify-center p-0.5">
+                  <MikazukiIcon className="w-full h-full" />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span className="font-serif font-black text-sm text-[var(--text-color)]">
                       本丸手札
                     </span>
-                    <span className="px-1.5 py-0.2 rounded bg-[var(--sakura-soft)] text-[var(--sakura-deep)] text-[10px] font-mono">
+                    <span className="px-2 py-0.5 rounded-full bg-[var(--sakura-soft)] text-[var(--sakura-deep)] text-[10px] font-mono border border-[var(--sakura-pink)]/40 font-semibold">
                       桌面应用名
                     </span>
                   </div>
-                  <p className="text-[11px] text-[var(--text-muted)] font-serif mt-0.5 leading-tight">
-                    以「三日月宗近」金箔双新月刀纹与静谧夜空为徽。添加到桌面后，将以全屏沉浸独立 App 模式运行，无浏览器多余边框。
-                  </p>
                 </div>
               </div>
 
