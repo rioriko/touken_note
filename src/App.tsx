@@ -4,6 +4,7 @@ import {
   NeibanRecord,
   NeibanStatus,
   DaozhangRecord,
+  TreasureItem,
   BenwanConfig,
   Assistant,
   COMMON_SWORD_TYPES,
@@ -15,6 +16,7 @@ import {
   INITIAL_PRESET_SWORDS,
   CLASSIC_PRESET_SWORDS,
   CLASSIC_PRESET_NEIBAN,
+  INITIAL_PRESET_TREASURES,
 } from './presetData';
 import { APP_DEFAULT_ABOUT } from './changelogData';
 import { Header } from './components/Header';
@@ -34,6 +36,7 @@ export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [neibanRecords, setNeibanRecords] = useState<NeibanRecord[]>([]);
   const [daozhangRecords, setDaozhangRecords] = useState<DaozhangRecord[]>([]);
+  const [treasures, setTreasures] = useState<TreasureItem[]>([]);
   const [config, setConfig] = useState<BenwanConfig>({
     confirmDelete: true,
     theme: 'system',
@@ -162,6 +165,21 @@ export default function App() {
         setDaozhangRecords(INITIAL_PRESET_SWORDS); // Empty array
       }
 
+      // Load treasures from localStorage
+      const savedTreasures = localStorage.getItem('benwan_treasures');
+      if (savedTreasures) {
+        try {
+          const parsedTreasures = JSON.parse(savedTreasures);
+          if (Array.isArray(parsedTreasures)) {
+            setTreasures(parsedTreasures);
+          }
+        } catch {
+          setTreasures(INITIAL_PRESET_TREASURES);
+        }
+      } else {
+        setTreasures(INITIAL_PRESET_TREASURES);
+      }
+
       const savedConfig = localStorage.getItem('benwan_config');
       if (savedConfig) {
         const parsed = JSON.parse(savedConfig);
@@ -274,6 +292,32 @@ export default function App() {
     } catch (e) {
       showToast('存储空间不足', 'warning');
     }
+  };
+
+  const saveTreasuresToStorage = (updated: TreasureItem[]) => {
+    setTreasures(updated);
+    try {
+      localStorage.setItem('benwan_treasures', JSON.stringify(updated));
+    } catch (e) {
+      showToast('浏览器本地存储空间可能不足，宝物图片未能完全持久化', 'warning');
+    }
+  };
+
+  const handleSaveTreasure = (item: TreasureItem) => {
+    const existingIndex = treasures.findIndex((t) => t.id === item.id);
+    let updated: TreasureItem[];
+    if (existingIndex >= 0) {
+      updated = [...treasures];
+      updated[existingIndex] = item;
+    } else {
+      updated = [item, ...treasures];
+    }
+    saveTreasuresToStorage(updated);
+  };
+
+  const handleDeleteTreasure = (id: string) => {
+    const updated = treasures.filter((t) => t.id !== id);
+    saveTreasuresToStorage(updated);
   };
 
   const handleUpdateConfig = (newConfig: Partial<BenwanConfig>) => {
@@ -455,6 +499,7 @@ export default function App() {
       notes,
       neibanRecords,
       daozhangRecords,
+      treasures,
       config,
       assistant,
       exportedAt: new Date().toISOString(),
@@ -487,6 +532,9 @@ export default function App() {
         }
         if (imported.daozhangRecords && Array.isArray(imported.daozhangRecords)) {
           saveDaozhangToStorage(migrateDaozhangRecords(imported.daozhangRecords));
+        }
+        if (imported.treasures && Array.isArray(imported.treasures)) {
+          saveTreasuresToStorage(imported.treasures);
         }
         if (imported.config) {
           handleUpdateConfig(imported.config);
@@ -601,8 +649,11 @@ export default function App() {
         isOpen={isDaozhangOpen}
         onClose={() => setIsDaozhangOpen(false)}
         records={daozhangRecords}
+        treasures={treasures}
         onSaveRecord={handleSaveDaozhang}
         onDeleteRecord={handleDeleteDaozhang}
+        onSaveTreasure={handleSaveTreasure}
+        onDeleteTreasure={handleDeleteTreasure}
         onLoadPresetSwords={handleLoadPresetSwords}
         showToast={showToast}
       />

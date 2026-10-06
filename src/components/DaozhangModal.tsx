@@ -2,10 +2,12 @@ import React, { useState, useMemo } from 'react';
 import {
   DaozhangRecord,
   DaozhangMemoEntry,
+  TreasureItem,
   COMMON_SWORD_TYPES,
   COMMON_SCHOOLS,
   SwordType,
 } from '../types';
+import { TreasureGallery } from './TreasureGallery';
 import {
   X,
   Plus,
@@ -28,19 +30,23 @@ import {
   MessageSquare,
   StickyNote,
   Send,
+  Gift,
 } from 'lucide-react';
 
 interface DaozhangModalProps {
   isOpen: boolean;
   onClose: () => void;
   records: DaozhangRecord[];
+  treasures: TreasureItem[];
   onSaveRecord: (record: DaozhangRecord, isNew: boolean) => void;
   onDeleteRecord: (id: string) => void;
+  onSaveTreasure: (item: TreasureItem) => void;
+  onDeleteTreasure: (id: string) => void;
   onLoadPresetSwords: () => void;
   showToast: (msg: string) => void;
 }
 
-type DaozhangView = 'index' | 'form' | 'detail';
+type DaozhangView = 'index' | 'form' | 'detail' | 'treasure';
 type ViewMode = 'grid' | 'list' | 'timeline';
 type SortOrder = 'date-desc' | 'date-asc' | 'number-asc' | 'number-desc';
 
@@ -70,14 +76,18 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
   isOpen,
   onClose,
   records,
+  treasures,
   onSaveRecord,
   onDeleteRecord,
+  onSaveTreasure,
+  onDeleteTreasure,
   onLoadPresetSwords,
   showToast,
 }) => {
   const [currentView, setCurrentView] = useState<DaozhangView>('index');
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [treasureFilterSwordId, setTreasureFilterSwordId] = useState<string | null>(null);
 
   // Search & Filter state - Default to chronological timeline sorting (date-desc)
   const [searchTerm, setSearchTerm] = useState('');
@@ -364,6 +374,35 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* 宝物库按钮 (位于登录新刀左侧，使用 Gift 图标) */}
+            <button
+              onClick={() => {
+                if (currentView === 'treasure') {
+                  setCurrentView('index');
+                  setTreasureFilterSwordId(null);
+                } else {
+                  setCurrentView('treasure');
+                  setTreasureFilterSwordId(null);
+                }
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer shadow-xs transition-all ${
+                currentView === 'treasure'
+                  ? 'bg-[var(--accent-gold)] text-white border-[var(--accent-gold)] shadow-sm'
+                  : 'bg-[var(--panel-color)] border-[var(--sakura-pink)] text-[var(--header-red)] hover:bg-[var(--sakura-soft)]'
+              }`}
+              title="浏览与收纳本丸男士肖像、战绩留念与珍藏宝物照片"
+            >
+              <Gift className="w-3.5 h-3.5" />
+              <span>御宝物库</span>
+              {treasures.length > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono leading-none ${
+                  currentView === 'treasure' ? 'bg-white/25 text-white' : 'bg-[var(--sakura-soft)] text-[var(--sakura-deep)]'
+                }`}>
+                  {treasures.length}
+                </span>
+              )}
+            </button>
+
             {currentView === 'index' && (
               <button
                 onClick={handleAddNew}
@@ -371,6 +410,15 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>登用新刃</span>
+              </button>
+            )}
+
+            {currentView === 'treasure' && (
+              <button
+                onClick={() => setCurrentView('index')}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--border-color)] text-[var(--text-color)] hover:bg-[var(--search-bg)] text-xs font-medium cursor-pointer transition-colors"
+              >
+                <span>返还刀账</span>
               </button>
             )}
 
@@ -1201,14 +1249,30 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsAddingMemo(!isAddingMemo)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--sakura-soft)] text-[var(--sakura-deep)] hover:bg-[var(--sakura-pink)]/40 text-xs font-serif font-semibold cursor-pointer transition-colors shadow-2xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{isAddingMemo ? '收起录入' : '题写备忘'}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Shortcut to view this sword's treasures in TreasureGallery */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTreasureFilterSwordId(currentRecord.id);
+                      setCurrentView('treasure');
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--search-bg)] border border-[var(--border-color)] text-[var(--text-color)] hover:border-[var(--accent-gold)] text-xs font-serif cursor-pointer transition-colors"
+                    title={`进入宝物库查看【${currentRecord.name}】的专属照片与留影`}
+                  >
+                    <Gift className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
+                    <span>专属宝物 ({treasures.filter((t) => t.swordId === currentRecord.id).length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingMemo(!isAddingMemo)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--sakura-soft)] text-[var(--sakura-deep)] hover:bg-[var(--sakura-pink)]/40 text-xs font-serif font-semibold cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{isAddingMemo ? '收起录入' : '题写备忘'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Form to add a new memo entry */}
@@ -1345,6 +1409,21 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
             </div>
           </div>
         )}
+
+        {/* ================= VIEW 4: TREASURE GALLERY (宝物库 · INS拍立得照片墙) ================= */}
+        {currentView === 'treasure' && (
+          <TreasureGallery
+            treasures={treasures}
+            swords={records}
+            onSaveTreasure={onSaveTreasure}
+            onDeleteTreasure={onDeleteTreasure}
+            filterSwordId={treasureFilterSwordId}
+            onClearSwordFilter={() => setTreasureFilterSwordId(null)}
+            showToast={showToast}
+            onClose={() => setCurrentView('index')}
+          />
+        )}
+
         {/* In-App Custom Confirm Modal for 刀账除名 (100% reliable in sandbox iframe & web browsers) */}
         {recordPendingDelete && (
           <div

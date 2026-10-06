@@ -1,4 +1,4 @@
-import { DaozhangRecord, NeibanRecord, Note } from './types';
+import { DaozhangRecord, NeibanRecord, Note, TreasureItem } from './types';
 
 // 预设经典刀剑范本（可供用户在需要时自愿点击“载入经典刀剑范本”引入，默认不强行预置）
 export const CLASSIC_PRESET_SWORDS: DaozhangRecord[] = [
@@ -239,3 +239,6 @@ export const CLASSIC_PRESET_NEIBAN: NeibanRecord[] = [
 
 // 系统初始内番当值名册：默认纯净为空，等待审神者亲自安排当值
 export const INITIAL_NEIBAN: NeibanRecord[] = [];
+
+// 系统初始宝物库：默认纯净为空
+export const INITIAL_PRESET_TREASURES: TreasureItem[] = [];

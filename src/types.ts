@@ -49,6 +49,20 @@ export interface DaozhangMemoEntry {
   content: string;
 }
 
+export type TreasureTag = '出阵战绩' | '男士肖像' | '近侍手绘' | '本丸景趣' | '现世谷美' | '特别机密';
+
+export interface TreasureItem {
+  id: string;
+  title: string;
+  imageUrl: string; // Base64 data URL or external URL
+  date: string;
+  tag: TreasureTag | string;
+  swordId?: string; // 关联本丸刀账中的刀剑男士 (可选)
+  swordName?: string;
+  caption?: string; // 手帐回忆小注
+  rotation?: number; // 拍立得挂饰微旋转角度 (-4 到 +4 度)
+}
+
 export interface DaozhangRecord {
   id: string;
   number: string; // 刀剑番号 (如 "No.003", "003", "085")

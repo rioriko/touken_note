@@ -6,16 +6,28 @@ export interface VersionRelease {
   highlights: string[];
 }
 
-export const APP_VERSION = 'v1.2';
+export const APP_VERSION = 'v1.3';
 export const APP_FULL_TITLE = '本丸事记 - 审神者专用手帐工具';
 export const APP_DEFAULT_ABOUT = '本丸事记\n审神者专用手帐工具 | 于现代记录';
 
 export const CHANGELOG_HISTORY: VersionRelease[] = [
   {
+    version: 'v1.3',
+    title: '御宝物库上线与ins风拍立得回廊挂饰墙',
+    date: '2026年10月',
+    badge: '当前版本',
+    highlights: [
+      '🎁 御宝物库（TreasureGallery）：内置于刀账典籍「登用新刃」左侧，配以典雅礼匣图标，支持一键切换展厅。',
+      '🖼️ ins风拍立得照片挂饰墙：采用CSS Grid自适应错落布局，呈现和风胶带挂饰、拍立得白边、微旋转倾角与悬停立体浮空阴影。',
+      '📷 本地多源照片呈递：支持用户相机拍摄、本地相册挑选，具备客户端自适应压缩与localStorage持久化序列化存储。',
+      '🏷️ 多维分类与男士专属影集：划分【男士肖像/出阵战绩/近侍手绘/本丸景趣/现世谷美/特别机密】；支持在刀剑详情页一键直达男士专属宝物相册。',
+      '🔍 沉浸高清灯箱展台（Lightbox）：点击任意照片可放大至全屏黑金展厅赏阅，附带收纳铭文与手帐回忆小注。',
+    ],
+  },
+  {
     version: 'v1.2',
     title: '十二阶神签占卜与内番纯净名册升级',
     date: '2026年10月',
-    badge: '当前版本',
     highlights: [
       '⛩️ 传统十二阶神签体系：升级刀装占卜与近侍每日晨签，纳入【大吉·天晴】、【中吉·玉】、【小吉·花】、【吉·灯】、【半吉·月】、【末吉·雪解】、【末小吉·芽】、【平·水面】、【小凶·薄雾】、【半凶·缺月】、【凶·锈】、【末凶·断火】12阶意象。',
       '🌾 内番当值纯净名册：系统初始化默认纯净空白，由审神者亲自指派众刃当值；支持0%/50%/100%三级进度与逃番摸鱼备考，随时可一键载入官方经典示例。',
