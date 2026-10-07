@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BenwanConfig, ColorTheme } from '../types';
+import React, { useState, useRef } from 'react';
+import { BenwanConfig, ColorTheme, SceneryType, AmbientSoundType } from '../types';
 import {
   X,
   Moon,
@@ -18,7 +18,16 @@ import {
   Tag,
   Smartphone,
   Share2,
+  Volume2,
+  VolumeX,
+  Wind,
+  Music,
+  Droplets,
+  Feather,
+  Bell,
+  Trash2,
 } from 'lucide-react';
+import { soundManager } from '../utils/soundManager';
 import {
   APP_VERSION,
   APP_FULL_TITLE,
@@ -374,6 +383,204 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Section: 时令景趣轻动效 (Seasonal Scenery) */}
+          <div className="space-y-3 pb-4 border-b border-[var(--border-color)]">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-[var(--header-red)] text-sm flex items-center gap-1.5 font-serif">
+                <Wind className="w-4 h-4" />
+                本丸时令景趣 (轻盈动效)
+              </h4>
+              <span className="text-[11px] text-[var(--text-muted)] font-serif">
+                当前：{
+                  {
+                    sakura: '春樱纷落',
+                    maple: '秋枫红叶',
+                    snow: '冬日初雪',
+                    firefly: '夏夜流萤',
+                    none: '静水无动',
+                  }[config.scenery || 'sakura']
+                }
+              </span>
+            </div>
+
+            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed font-serif">
+              轻量纯净动效，微风过处庭院花瓣与流萤轻泛（极度省电，可自由停歇）：
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {[
+                { id: 'sakura' as SceneryType, name: '春樱纷落', icon: '🌸', desc: '粉樱飘曳' },
+                { id: 'maple' as SceneryType, name: '秋枫红叶', icon: '🍁', desc: '丹枫飘落' },
+                { id: 'snow' as SceneryType, name: '冬日初雪', icon: '❄️', desc: '轻雪纷飞' },
+                { id: 'firefly' as SceneryType, name: '夏夜流萤', icon: '✨', desc: '幽微萤火' },
+                { id: 'none' as SceneryType, name: '静寂清屏', icon: '🍃', desc: '关闭动效' },
+              ].map((sc) => {
+                const isSelected = (config.scenery || 'sakura') === sc.id;
+                return (
+                  <button
+                    key={sc.id}
+                    type="button"
+                    onClick={() => {
+                      onUpdateConfig({ scenery: sc.id });
+                      showToast(`已更换时令景趣为【${sc.name}】`);
+                    }}
+                    className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-[var(--sakura-deep)] bg-[var(--sakura-soft)] text-[var(--header-red)] font-bold shadow-2xs'
+                        : 'border-[var(--border-color)] bg-[var(--search-bg)] text-[var(--text-muted)] hover:text-[var(--text-color)]'
+                    }`}
+                  >
+                    <span className="text-lg">{sc.icon}</span>
+                    <span className="text-xs font-serif">{sc.name}</span>
+                    <span className="text-[9px] opacity-75 font-serif">{sc.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section: 回廊环境音律与手帐触控音效 (Ambient Soundscape) */}
+          <div className="space-y-3 pb-4 border-b border-[var(--border-color)]">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-[var(--header-red)] text-sm flex items-center gap-1.5 font-serif">
+                <Music className="w-4 h-4" />
+                回廊和风音律与触控声景
+              </h4>
+
+              {/* Master Audio Switch */}
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.audioEnabled || false}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    onUpdateConfig({ audioEnabled: enabled });
+                    if (enabled) {
+                      soundManager.playWindbell();
+                      showToast('回廊风铃已启，点击轻抚皆有灵动清音');
+                    } else {
+                      showToast('环境音已归入静寂');
+                    }
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-10 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--sakura-deep)]" />
+              </label>
+            </div>
+
+            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed font-serif">
+              默认静音。开启后，轻触按钮、翻阅刀账、摇出神签时伴随灵动声效；支持原生合成声或自定义上传音频：
+            </p>
+
+            {/* Sound selection modes */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'windbell' as AmbientSoundType, name: '黄铜风铃', desc: '空灵金石回响', icon: Bell },
+                { id: 'paper' as AmbientSoundType, name: '宣纸翻页', desc: '古朴纸页摩擦', icon: BookOpen },
+                { id: 'brush' as AmbientSoundType, name: '落笔凝墨', desc: '提笔柔韧点触', icon: Feather },
+                { id: 'rain' as AmbientSoundType, name: '回廊微雨', desc: '檐下甘霖滴答', icon: Droplets },
+              ].map((snd) => {
+                const isSelected = (config.ambientSoundType || 'windbell') === snd.id;
+                const Icon = snd.icon;
+                return (
+                  <button
+                    key={snd.id}
+                    type="button"
+                    onClick={() => {
+                      onUpdateConfig({ ambientSoundType: snd.id });
+                      soundManager.playInteractionSound(snd.id, undefined, 'click');
+                      showToast(`已选用【${snd.name}】触控声景`);
+                    }}
+                    className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-[var(--accent-gold)] bg-[var(--sakura-soft)] text-[var(--accent-gold)] font-bold shadow-2xs'
+                        : 'border-[var(--border-color)] bg-[var(--search-bg)] text-[var(--text-muted)] hover:text-[var(--text-color)]'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-xs font-serif">{snd.name}</span>
+                    <span className="text-[9px] opacity-75 font-serif">{snd.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Custom Audio Upload Option */}
+            <div className="p-3 rounded-xl bg-[var(--search-bg)] border border-[var(--border-color)] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-serif font-bold text-xs text-[var(--text-color)] flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
+                  <span>自定义上传专属音效 (MP3 / WAV / OGG)</span>
+                </span>
+                {config.customAudioUrl && (
+                  <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-mono">
+                    已载入专属音
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-color)] bg-[var(--panel-color)] text-[var(--text-color)] hover:border-[var(--sakura-pink)] text-xs font-serif cursor-pointer">
+                  <span>挑选本地音频文件</span>
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (rev) => {
+                        const base64 = rev.target?.result as string;
+                        onUpdateConfig({
+                          ambientSoundType: 'custom',
+                          customAudioUrl: base64,
+                          customAudioName: file.name.slice(0, 20),
+                        });
+                        soundManager.playCustomAudio(base64);
+                        showToast(`已成功录用专属音频【${file.name.slice(0, 16)}】`);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="hidden"
+                  />
+                </label>
+
+                {config.customAudioUrl ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundManager.playCustomAudio(config.customAudioUrl!);
+                      }}
+                      className="px-2.5 py-1 rounded-md bg-[var(--sakura-soft)] text-[var(--sakura-deep)] text-xs font-serif cursor-pointer hover:bg-[var(--sakura-pink)]/40"
+                    >
+                      试听
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateConfig({
+                          ambientSoundType: 'windbell',
+                          customAudioUrl: undefined,
+                          customAudioName: undefined,
+                        });
+                        showToast('已移除自定义音频，复归黄铜风铃');
+                      }}
+                      className="p-1 text-red-500 hover:text-red-700 cursor-pointer"
+                      title="移除专属音频"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-[var(--text-muted)] font-serif">
+                    未配置时默认使用纯粹空灵的回廊风铃
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

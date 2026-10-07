@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Note, NeibanRecord, NoteTag, NeibanType, NeibanStatus, DaozhangRecord } from '../types';
 import { SACRED_FORTUNE_LIST, SacredFortuneDefinition } from '../dailyFortuneData';
+import { soundManager } from '../utils/soundManager';
 import {
   Search,
   Sparkles,
@@ -244,6 +245,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
 
   // 刀装神签摇签算法：采用12级神签（大吉、中吉、小吉、吉、半吉、末吉、末小吉、平、小凶、半凶、凶、末凶）
   const drawFortune = () => {
+    soundManager.playWindbell();
     setIsShaking(true);
     setTimeout(() => {
       const sum = SACRED_FORTUNE_LIST.reduce((acc, cur) => acc + cur.weight, 0);

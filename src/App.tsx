@@ -30,6 +30,8 @@ import { DailyFortuneModal } from './components/DailyFortuneModal';
 import { generateDailyFortune, DailyFortune } from './dailyFortuneData';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { SwordMonLoader } from './components/SwordMonLoader';
+import { SceneryOverlay } from './components/SceneryOverlay';
+import { soundManager } from './utils/soundManager';
 import { UserCheck, Sparkles } from 'lucide-react';
 
 export default function App() {
@@ -45,6 +47,9 @@ export default function App() {
     honmaruName: '大和',
     saniwaName: '审神者',
     hasInitializedProfile: false,
+    scenery: 'sakura',
+    audioEnabled: false,
+    ambientSoundType: 'windbell',
   });
   const [assistant, setAssistant] = useState<Assistant>({
     name: '加州清光',
@@ -600,6 +605,9 @@ export default function App() {
     <div className="min-h-screen flex flex-col relative selection:bg-[var(--sakura-pink)] selection:text-[var(--text-color)]">
       <ToastContainer toasts={toasts} />
 
+      {/* Seasonal Honmaru Scenery Overlay (Floating petals, snow, fireflies) */}
+      <SceneryOverlay scenery={config.scenery || 'sakura'} />
+
       {/* Ceremonial Startup Sword Mon Loading Stage */}
       {isAppInitializing && (
         <SwordMonLoader
@@ -622,14 +630,37 @@ export default function App() {
       <Header
         honmaruName={config.honmaruName || '大和'}
         saniwaName={config.saniwaName || '审神者'}
-        onOpenNewNote={handleOpenNewNote}
-        onOpenDaozhang={() => setIsDaozhangOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenFortune={() => setIsFortuneModalOpen(true)}
+        onOpenNewNote={() => {
+          if (config.audioEnabled) soundManager.playInteractionSound(config.ambientSoundType, config.customAudioUrl, 'stroke');
+          handleOpenNewNote();
+        }}
+        onOpenDaozhang={() => {
+          if (config.audioEnabled) soundManager.playInteractionSound(config.ambientSoundType, config.customAudioUrl, 'flip');
+          setIsDaozhangOpen(true);
+        }}
+        onOpenSettings={() => {
+          if (config.audioEnabled) soundManager.playInteractionSound(config.ambientSoundType, config.customAudioUrl, 'click');
+          setIsSettingsOpen(true);
+        }}
+        onOpenFortune={() => {
+          if (config.audioEnabled) soundManager.playInteractionSound(config.ambientSoundType, config.customAudioUrl, 'click');
+          setIsFortuneModalOpen(true);
+        }}
         onEditProfile={() => setIsWelcomeModalOpen(true)}
         daozhangCount={daozhangRecords.length}
         theme={config.theme}
         onToggleTheme={handleToggleTheme}
+        audioEnabled={config.audioEnabled || false}
+        onToggleAudio={() => {
+          const next = !config.audioEnabled;
+          handleUpdateConfig({ audioEnabled: next });
+          if (next) {
+            soundManager.playInteractionSound(config.ambientSoundType, config.customAudioUrl, 'click');
+            showToast('回廊风铃已启，点击轻抚皆有灵动清音');
+          } else {
+            showToast('环境音已归入静寂');
+          }
+        }}
       />
 
       {/* Main Notes, Neiban, and Divination Area */}

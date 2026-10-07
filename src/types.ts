@@ -78,10 +78,19 @@ export interface DaozhangRecord {
 
 export type ColorTheme = 'sakura' | 'koubai' | 'take' | 'fuji' | 'wisteria';
 
+export type SceneryType = 'none' | 'sakura' | 'maple' | 'snow' | 'firefly';
+
+export type AmbientSoundType = 'windbell' | 'paper' | 'brush' | 'rain' | 'custom';
+
 export interface BenwanConfig {
   confirmDelete: boolean;
   theme: 'light' | 'dark' | 'system';
   colorTheme?: ColorTheme;
+  scenery?: SceneryType; // 本丸时令景趣轻动效
+  audioEnabled?: boolean; // 是否启用和风环境音效 (默认静音 false)
+  ambientSoundType?: AmbientSoundType; // 选用的环境音效模式
+  customAudioUrl?: string; // 用户自定义上传或绑定的音频 URL / Base64
+  customAudioName?: string; // 自定义音频名称
   about: string;
   honmaruName?: string; // 自定义本丸名字 (例如: "大和", "浅樱", "相模")
   saniwaName?: string; // 审神者尊号 (例如: "审神者", "主殿")

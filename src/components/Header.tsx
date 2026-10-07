@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Plus, Settings, Sun, Moon, Sparkles } from 'lucide-react';
+import { BookOpen, Plus, Settings, Sun, Moon, Sparkles, Volume2, VolumeX, Wind } from 'lucide-react';
 
 interface HeaderProps {
   honmaruName: string;
@@ -12,6 +12,8 @@ interface HeaderProps {
   daozhangCount: number;
   theme: 'light' | 'dark' | 'system';
   onToggleTheme: () => void;
+  audioEnabled?: boolean;
+  onToggleAudio?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,6 +27,8 @@ export const Header: React.FC<HeaderProps> = ({
   daozhangCount,
   theme,
   onToggleTheme,
+  audioEnabled = false,
+  onToggleAudio,
 }) => {
   const displayHonmaru = honmaruName ? `${honmaruName}_本丸` : '本丸';
 
@@ -63,6 +67,25 @@ export const Header: React.FC<HeaderProps> = ({
             <Moon className="w-4 h-4 text-[var(--text-muted)]" />
           )}
         </button>
+
+        {/* 回廊环境音效 / 风铃开关 (极具和风意境) */}
+        {onToggleAudio && (
+          <button
+            onClick={onToggleAudio}
+            title={audioEnabled ? '静音本丸环境音效' : '开启本丸回廊风铃与纸墨音效'}
+            className={`p-1.5 sm:p-2 rounded-lg transition-all cursor-pointer relative ${
+              audioEnabled
+                ? 'text-[var(--accent-gold)] bg-[var(--sakura-soft)] border border-[var(--accent-gold)]/40 shadow-2xs'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-color)] hover:bg-[var(--search-bg)]'
+            }`}
+          >
+            {audioEnabled ? (
+              <Volume2 className="w-4 h-4 animate-pulse" />
+            ) : (
+              <VolumeX className="w-4 h-4 opacity-70" />
+            )}
+          </button>
+        )}
 
         {/* 今日签文与晨鉴 Button (极简 '签' 字符号) */}
         {onOpenFortune && (

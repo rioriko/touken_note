@@ -6,16 +6,26 @@ export interface VersionRelease {
   highlights: string[];
 }
 
-export const APP_VERSION = 'v1.3.03';
+export const APP_VERSION = 'v1.4.0';
 export const APP_FULL_TITLE = '本丸手札 - 审神者专用手帐工具';
 export const APP_DEFAULT_ABOUT = '本丸手札\n审神者专用手帐工具 | 于现代记录';
 
 export const CHANGELOG_HISTORY: VersionRelease[] = [
   {
+    version: 'v1.4.0',
+    title: '本丸时令景趣轻动效与回廊和风触控声景系统',
+    date: '2026年10月',
+    badge: '当前版本',
+    highlights: [
+      '🎐 回廊风铃与手帐触控声景（Web Audio API）：顶栏提供专属风铃开关，默认静音；开启后轻触按钮、翻阅刀账、提笔写帖伴随空灵铜铃、宣纸翻折或落笔点墨声。',
+      '🎵 自定义专属音效上传：支持审神者在设置中自由上传本地 MP3 / WAV 专属音频并支持一键试听与随时复归。',
+      '🌸 五大本丸时令景趣动效：庭院支持自由切换【春樱纷落/秋枫红叶/冬日初雪/夏夜流萤/静寂清屏】，超轻量纯净粒子，微风吹拂惬意治愈。',
+    ],
+  },
+  {
     version: 'v1.3.03',
     title: '刀账名册近侍联动与静谧月晕渐变加载动效',
     date: '2026年10月',
-    badge: '当前版本',
     highlights: [
       '🌸 刀账与本丸近侍深度联动：点击左下角「近侍任命」，可直接从当前刀账典籍收录的名录中一键点选任命（自动带入名讳与刀种流派）。',
       '🗡️ 刀剑详情页一键就任：在刀账详情页底部新增「任命为近侍」专属指令，随时将心仪男士擢升为本丸近侍。',

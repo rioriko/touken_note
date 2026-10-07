@@ -219,3 +219,41 @@
   animation: monFadePulse 2.4s ease-in-out infinite;
 }
 
+@keyframes petalFall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(18px, 25vh) rotate(45deg);
+  }
+  50% {
+    transform: translate(-15px, 50vh) rotate(90deg);
+  }
+  75% {
+    transform: translate(22px, 75vh) rotate(135deg);
+  }
+  100% {
+    transform: translate(0, 105vh) rotate(180deg);
+  }
+}
+
+.animate-petal-fall {
+  animation: petalFall linear infinite;
+}
+
+@keyframes fireflyGlow {
+  0%, 100% {
+    transform: translate(0, 0) scale(0.8);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate(30px, -20px) scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+.animate-firefly-glow {
+  animation: fireflyGlow ease-in-out infinite;
+}
+
+
