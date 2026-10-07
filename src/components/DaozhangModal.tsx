@@ -31,6 +31,7 @@ import {
   StickyNote,
   Send,
   Gift,
+  UserCheck,
 } from 'lucide-react';
 
 interface DaozhangModalProps {
@@ -43,6 +44,7 @@ interface DaozhangModalProps {
   onSaveTreasure: (item: TreasureItem) => void;
   onDeleteTreasure: (id: string) => void;
   onLoadPresetSwords: () => void;
+  onDesignateAssistant?: (name: string, school: string) => void;
   showToast: (msg: string) => void;
 }
 
@@ -82,6 +84,7 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
   onSaveTreasure,
   onDeleteTreasure,
   onLoadPresetSwords,
+  onDesignateAssistant,
   showToast,
 }) => {
   const [currentView, setCurrentView] = useState<DaozhangView>('index');
@@ -1385,6 +1388,25 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
               </button>
 
               <div className="flex items-center gap-2">
+                {/* 任命为近侍快捷按钮 */}
+                {onDesignateAssistant && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onDesignateAssistant(
+                        currentRecord.name,
+                        currentRecord.school || (typeof currentRecord.swordType === 'string' ? currentRecord.swordType : '打刀')
+                      );
+                      showToast(`已任命【${currentRecord.name}】为本丸近侍！近侍参上`);
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--sakura-pink)] bg-[var(--sakura-soft)] text-[var(--sakura-deep)] hover:bg-[var(--sakura-pink)]/40 text-xs font-semibold cursor-pointer transition-colors shadow-2xs font-serif"
+                    title={`将【${currentRecord.name}】任命为当前辅佐本丸的近侍`}
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>任命为近侍</span>
+                  </button>
+                )}
+
                 {/* 刀账除名: Placed immediately to the left of 编辑全卷档案 */}
                 <button
                   type="button"

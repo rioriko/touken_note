@@ -696,6 +696,9 @@ export default function App() {
         onSaveTreasure={handleSaveTreasure}
         onDeleteTreasure={handleDeleteTreasure}
         onLoadPresetSwords={handleLoadPresetSwords}
+        onDesignateAssistant={(name, school) => {
+          handleSaveAssistant({ name, school });
+        }}
         showToast={showToast}
       />
 
@@ -713,8 +716,10 @@ export default function App() {
         isOpen={isAssistantOpen}
         onClose={() => setIsAssistantOpen(false)}
         assistant={assistant}
+        daozhangRecords={daozhangRecords}
         onSaveAssistant={handleSaveAssistant}
         onOpenFortune={() => setIsFortuneModalOpen(true)}
+        onOpenDaozhang={() => setIsDaozhangOpen(true)}
         showToast={showToast}
       />
 

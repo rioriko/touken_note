@@ -6,16 +6,26 @@ export interface VersionRelease {
   highlights: string[];
 }
 
-export const APP_VERSION = 'v1.3.02';
+export const APP_VERSION = 'v1.3.03';
 export const APP_FULL_TITLE = '本丸手札 - 审神者专用手帐工具';
 export const APP_DEFAULT_ABOUT = '本丸手札\n审神者专用手帐工具 | 于现代记录';
 
 export const CHANGELOG_HISTORY: VersionRelease[] = [
   {
+    version: 'v1.3.03',
+    title: '刀账名册近侍联动与静谧月晕渐变加载动效',
+    date: '2026年10月',
+    badge: '当前版本',
+    highlights: [
+      '🌸 刀账与本丸近侍深度联动：点击左下角「近侍任命」，可直接从当前刀账典籍收录的名录中一键点选任命（自动带入名讳与刀种流派）。',
+      '🗡️ 刀剑详情页一键就任：在刀账详情页底部新增「任命为近侍」专属指令，随时将心仪男士擢升为本丸近侍。',
+      '🌙 静谧三日月刀纹月光渐变显现（0%~100%）：移除机械式旋转，改为静止刀纹配合月华明灭呼吸渐变显现，更显本丸庄严肃穆与清雅之美。',
+    ],
+  },
+  {
     version: 'v1.3.02',
     title: '「三日月金箔刀纹旋转」仪式感开屏与数据流转动效',
     date: '2026年10月',
-    badge: '当前版本',
     highlights: [
       '✨ 三日月金箔刀纹优雅旋转加载器（SwordMonLoader）：引入外环星轨逆向慢旋、内环双月流金顺时针平滑自旋与灵动星晕呼吸动效。',
       '⛩️ 就任开卷仪式感：初次点开或重新载入应用时，浮现【本丸手札·敬启】仪式微光舞台，随和风字样平滑淡入主幕。',

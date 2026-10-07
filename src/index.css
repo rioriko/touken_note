@@ -199,3 +199,23 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--sakura-deep);
 }
+
+@keyframes monFadePulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0.15;
+    transform: scale(0.97);
+  }
+}
+
+.animate-mon-fade {
+  animation: monFadePulse 2.4s ease-in-out infinite;
+}
+
