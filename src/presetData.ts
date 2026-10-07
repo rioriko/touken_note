@@ -1,4 +1,4 @@
-import { DaozhangRecord, NeibanRecord, Note, TreasureItem } from './types';
+import { DaozhangRecord, NeibanRecord, Note, TreasureItem, ExpeditionRecord } from './types';
 
 // 预设经典刀剑范本（可供用户在需要时自愿点击“载入经典刀剑范本”引入，默认不强行预置）
 export const CLASSIC_PRESET_SWORDS: DaozhangRecord[] = [
@@ -242,3 +242,148 @@ export const INITIAL_NEIBAN: NeibanRecord[] = [];
 
 // 系统初始宝物库：默认纯净为空
 export const INITIAL_PRESET_TREASURES: TreasureItem[] = [];
+
+// 系统初始周度手札 (Weekly Planner) 经典范本
+export const INITIAL_WEEKLY_PLANNER = {
+  id: 'current-week',
+  year: 2026,
+  monthIndex: 12,
+  weekIndex: 4,
+  goalMemo: '每周定好目标，一周后确认是否达成。\n用 habit tracker 来提高做事效率，\n计划每日必做的事情。',
+  days: {
+    mon: [
+      { id: 'm1', text: '准时出阵与演练', done: true },
+      { id: 'm2', text: '本丸回廊整理', done: false },
+      { id: 'm3', text: '完成手帐随笔', done: false },
+      { id: 'm4', text: '刀装锻造研习', done: false },
+      { id: 'm5', text: '运动 30 min', done: false },
+    ],
+    tue: [
+      { id: 't1', text: '马当番照料', done: false },
+      { id: 't2', text: '寝室整理与通风', done: false },
+      { id: 't3', text: '去万屋采买点心', done: false },
+      { id: 't4', text: '背 50 个词汇', done: false },
+      { id: 't5', text: '运动 30 min', done: false },
+    ],
+    wed: [
+      { id: 'w1', text: '准时就寝不熬夜', done: false },
+      { id: 'w2', text: '完成周中汇报', done: false },
+      { id: 'w3', text: '给近侍挑选景趣', done: false },
+      { id: 'w4', text: '运动 30 min', done: false },
+    ],
+    thu: [
+      { id: 'th1', text: '准时出阵', done: false },
+      { id: 'th2', text: '畑当番蔬菜采收', done: false },
+      { id: 'th3', text: '阅读 30 min', done: false },
+      { id: 'th4', text: '整理刀账番号', done: false },
+    ],
+    fri: [
+      { id: 'f1', text: '背 50 个词汇', done: false },
+      { id: 'f2', text: '运动 30 min', done: false },
+      { id: 'f3', text: '周末行程提前安排', done: true },
+      { id: 'f4', text: '和同僚战友小聚', done: false },
+    ],
+    sat: [
+      { id: 'sa1', text: '连队战冲刺御岁魂', done: false },
+      { id: 'sa2', text: '给爱刀拍摄宝物立拍得', done: false },
+      { id: 'sa3', text: '现世大采购', done: false },
+    ],
+    sun: [
+      { id: 'su1', text: '复盘本周周度目标达成', done: false },
+      { id: 'su2', text: '制定下周目标', done: false },
+      { id: 'su3', text: '早睡养精蓄锐', done: false },
+    ],
+  },
+  todoStickyNotes: '12.21  逛街买谷\n12.25  现世聚会\n12.27  连队战十万魂冲刺',
+};
+
+// 预设远征战报示例清单
+export const INITIAL_EXPEDITIONS: ExpeditionRecord[] = [
+  {
+    id: 'exp-1',
+    date: '2026-10-01',
+    area: '时代1-1 鸟羽出阵',
+    fleet: '第二部队',
+    result: '大成功',
+    charcoal: 150,
+    steel: 150,
+    coolant: 0,
+    whetstone: 0,
+    charcoalExpense: 20,
+    steelExpense: 10,
+    coolantExpense: 0,
+    whetstoneExpense: 0,
+    itemsEarned: '小判箱(中) x1',
+    notes: '全员飘樱花满状态大成功回港',
+  },
+  {
+    id: 'exp-2',
+    date: '2026-10-02',
+    area: '时代1-2 会津侦察',
+    fleet: '第二部队',
+    result: '成功',
+    charcoal: 100,
+    steel: 0,
+    coolant: 120,
+    whetstone: 0,
+    charcoalExpense: 15,
+    steelExpense: 0,
+    coolantExpense: 10,
+    whetstoneExpense: 0,
+    itemsEarned: '手入札 x1',
+    notes: '顺利完成侦察，微量手入消耗',
+  },
+  {
+    id: 'exp-3',
+    date: '2026-10-03',
+    area: '时代2-1 江户迎击',
+    fleet: '第三部队',
+    result: '大成功',
+    charcoal: 180,
+    steel: 180,
+    coolant: 180,
+    whetstone: 180,
+    charcoalExpense: 30,
+    steelExpense: 25,
+    coolantExpense: 20,
+    whetstoneExpense: 15,
+    itemsEarned: '小判箱(大) x1, 委托札 x1',
+    notes: '斩获四项平衡大资源',
+  },
+  {
+    id: 'exp-4',
+    date: '2026-10-04',
+    area: 'B-1 公武合体运动',
+    fleet: '第二部队',
+    result: '成功',
+    charcoal: 220,
+    steel: 260,
+    coolant: 150,
+    whetstone: 0,
+    charcoalExpense: 35,
+    steelExpense: 30,
+    coolantExpense: 15,
+    whetstoneExpense: 0,
+    itemsEarned: '加速札 x1',
+    notes: '长途远征平安凯旋',
+  },
+  {
+    id: 'exp-5',
+    date: '2026-10-05',
+    area: '时代3-1 织田安土',
+    fleet: '第三部队',
+    result: '大成功',
+    charcoal: 250,
+    steel: 200,
+    coolant: 220,
+    whetstone: 240,
+    charcoalExpense: 40,
+    steelExpense: 30,
+    coolantExpense: 25,
+    whetstoneExpense: 20,
+    itemsEarned: '小判箱(特大) x1',
+    notes: '队长加州清光凯旋，战果极其丰硕',
+  },
+];
+
+

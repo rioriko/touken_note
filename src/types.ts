@@ -49,6 +49,25 @@ export interface DaozhangMemoEntry {
   content: string;
 }
 
+// ================= EXPEDITION REPORT (远征战报与资源统计) =================
+export interface ExpeditionRecord {
+  id: string;
+  date: string; // YYYY-MM-DD
+  area: string; // e.g. "时代1-鸟羽", "B-1 公武合体运动"
+  fleet: string; // e.g. "第二部队", "第三部队"
+  result: '大成功' | '成功' | '失败';
+  charcoal: number; // 木炭收获
+  steel: number; // 玉钢收获
+  coolant: number; // 冷却材收获
+  whetstone: number; // 砥石收获
+  charcoalExpense?: number; // 木炭消耗 (手入/补给)
+  steelExpense?: number; // 玉钢消耗
+  coolantExpense?: number; // 冷却材消耗
+  whetstoneExpense?: number; // 砥石消耗
+  itemsEarned?: string; // 获赠道具 (例如: 小判箱、加速札、手入札)
+  notes?: string;
+}
+
 export type TreasureTag = '出阵战绩' | '男士肖像' | '近侍手绘' | '本丸景趣' | '现世谷美' | '特别机密';
 
 export interface TreasureItem {
@@ -61,6 +80,27 @@ export interface TreasureItem {
   swordName?: string;
   caption?: string; // 手帐回忆小注
   rotation?: number; // 拍立得挂饰微旋转角度 (-4 到 +4 度)
+}
+
+// ================= WEEKLY PLANNER (周度手札) =================
+export interface WeeklyTodoItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export type WeekdayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+export interface WeeklyPlannerData {
+  id: string; // e.g. "2026-W42"
+  year: number;
+  monthIndex: number; // 1-12
+  weekIndex: number; // 1-5
+  goalMemo: string; // 右上角便利贴寄语与习惯打卡 (Habit Tracker)
+  days: {
+    [key in WeekdayKey]?: WeeklyTodoItem[];
+  };
+  todoStickyNotes: string; // 右下角手绘和纸板重要待办日程
 }
 
 export interface DaozhangRecord {

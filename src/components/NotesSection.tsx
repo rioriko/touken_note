@@ -1,7 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Note, NeibanRecord, NoteTag, NeibanType, NeibanStatus, DaozhangRecord } from '../types';
+import {
+  Note,
+  NeibanRecord,
+  NoteTag,
+  NeibanType,
+  NeibanStatus,
+  DaozhangRecord,
+  ExpeditionRecord,
+} from '../types';
 import { SACRED_FORTUNE_LIST, SacredFortuneDefinition } from '../dailyFortuneData';
 import { soundManager } from '../utils/soundManager';
+import { ExpeditionSection } from './ExpeditionSection';
 import {
   Search,
   Sparkles,
@@ -30,6 +39,7 @@ interface NotesSectionProps {
   notes: Note[];
   neibanRecords: NeibanRecord[];
   daozhangRecords?: DaozhangRecord[];
+  expeditions?: ExpeditionRecord[];
   saniwaName?: string;
   honmaruName?: string;
   onOpenNote: (note: Note) => void;
@@ -38,6 +48,10 @@ interface NotesSectionProps {
   onUpdateNeibanStatus?: (id: number, status: NeibanStatus, escapeReason?: string) => void;
   onDeleteNeiban: (id: number) => void;
   onLoadPresetNeiban?: () => void;
+  onAddExpedition?: (record: Omit<ExpeditionRecord, 'id'>) => void;
+  onUpdateExpedition?: (record: ExpeditionRecord) => void;
+  onDeleteExpedition?: (id: string) => void;
+  onLoadPresetExpeditions?: () => void;
   showToast: (msg: string) => void;
 }
 
@@ -45,6 +59,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   notes,
   neibanRecords,
   daozhangRecords = [],
+  expeditions = [],
   saniwaName = '主殿',
   honmaruName = '大和',
   onOpenNote,
@@ -53,6 +68,10 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   onUpdateNeibanStatus,
   onDeleteNeiban,
   onLoadPresetNeiban,
+  onAddExpedition,
+  onUpdateExpedition,
+  onDeleteExpedition,
+  onLoadPresetExpeditions,
   showToast,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -317,7 +336,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
 
         {/* Primary Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          {['全部', '日常', '内番', '战斗', '刀装'].map((tag) => (
+          {['全部', '日常', '内番', '战斗', '远征战报', '刀装'].map((tag) => (
             <button
               key={tag}
               onClick={() => {
@@ -915,6 +934,18 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* Special Module 3: 远征战报与四项资源收支簿 (When '远征战报' is selected or 战斗->远征 is selected) */}
+      {(activeMainFilter === '远征战报' || (activeMainFilter === '战斗' && activeBattleFilter === '远征')) && (
+        <ExpeditionSection
+          expeditions={expeditions}
+          onAddExpedition={onAddExpedition || (() => {})}
+          onUpdateExpedition={onUpdateExpedition}
+          onDeleteExpedition={onDeleteExpedition || (() => {})}
+          onLoadPresetExpeditions={onLoadPresetExpeditions}
+          showToast={showToast}
+        />
       )}
 
       {/* Notes List */}

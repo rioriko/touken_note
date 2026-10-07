@@ -5,10 +5,13 @@ import {
   NeibanStatus,
   DaozhangRecord,
   TreasureItem,
+  WeeklyPlannerData,
   BenwanConfig,
   Assistant,
+  ExpeditionRecord,
   COMMON_SWORD_TYPES,
   SwordType,
+  ColorTheme,
 } from './types';
 import {
   INITIAL_NOTES,
@@ -17,10 +20,13 @@ import {
   CLASSIC_PRESET_SWORDS,
   CLASSIC_PRESET_NEIBAN,
   INITIAL_PRESET_TREASURES,
+  INITIAL_WEEKLY_PLANNER,
+  INITIAL_EXPEDITIONS,
 } from './presetData';
 import { APP_DEFAULT_ABOUT } from './changelogData';
 import { Header } from './components/Header';
 import { NotesSection } from './components/NotesSection';
+import { WeeklyPlanner } from './components/WeeklyPlanner';
 import { DaozhangModal } from './components/DaozhangModal';
 import { NoteEditorModal } from './components/NoteEditorModal';
 import { AssistantModal } from './components/AssistantModal';
@@ -40,6 +46,9 @@ export default function App() {
   const [neibanRecords, setNeibanRecords] = useState<NeibanRecord[]>([]);
   const [daozhangRecords, setDaozhangRecords] = useState<DaozhangRecord[]>([]);
   const [treasures, setTreasures] = useState<TreasureItem[]>([]);
+  const [expeditions, setExpeditions] = useState<ExpeditionRecord[]>([]);
+  const [weeklyPlanner, setWeeklyPlanner] = useState<WeeklyPlannerData>(INITIAL_WEEKLY_PLANNER);
+  const [activeMainView, setActiveMainView] = useState<'notes' | 'planner'>('notes');
   const [config, setConfig] = useState<BenwanConfig>({
     confirmDelete: true,
     theme: 'system',
@@ -188,6 +197,36 @@ export default function App() {
         }
       } else {
         setTreasures(INITIAL_PRESET_TREASURES);
+      }
+
+      // Load weekly planner from localStorage
+      const savedPlanner = localStorage.getItem('benwan_planner');
+      if (savedPlanner) {
+        try {
+          const parsedPlanner = JSON.parse(savedPlanner);
+          setWeeklyPlanner(parsedPlanner);
+        } catch {
+          setWeeklyPlanner(INITIAL_WEEKLY_PLANNER);
+        }
+      } else {
+        setWeeklyPlanner(INITIAL_WEEKLY_PLANNER);
+      }
+
+      // Load expedition records from localStorage
+      const savedExpeditions = localStorage.getItem('benwan_expeditions');
+      if (savedExpeditions) {
+        try {
+          const parsedExp = JSON.parse(savedExpeditions);
+          if (Array.isArray(parsedExp)) {
+            setExpeditions(parsedExp);
+          } else {
+            setExpeditions(INITIAL_EXPEDITIONS);
+          }
+        } catch {
+          setExpeditions(INITIAL_EXPEDITIONS);
+        }
+      } else {
+        setExpeditions(INITIAL_EXPEDITIONS);
       }
 
       const savedConfig = localStorage.getItem('benwan_config');
@@ -516,6 +555,41 @@ export default function App() {
     }, 550);
   };
 
+  // Expedition Battle Reports handlers
+  const saveExpeditionsToStorage = (updated: ExpeditionRecord[]) => {
+    setExpeditions(updated);
+    localStorage.setItem('benwan_expeditions', JSON.stringify(updated));
+  };
+
+  const handleAddExpedition = (record: Omit<ExpeditionRecord, 'id'>) => {
+    const newEntry: ExpeditionRecord = {
+      id: `exp-${Date.now()}`,
+      ...record,
+    };
+    const updated = [newEntry, ...expeditions];
+    saveExpeditionsToStorage(updated);
+  };
+
+  const handleUpdateExpedition = (record: ExpeditionRecord) => {
+    const updated = expeditions.map((e) => (e.id === record.id ? record : e));
+    saveExpeditionsToStorage(updated);
+  };
+
+  const handleDeleteExpedition = (id: string) => {
+    const updated = expeditions.filter((e) => e.id !== id);
+    saveExpeditionsToStorage(updated);
+    showToast('已移除该卷远征战报');
+  };
+
+  const handleLoadPresetExpeditions = () => {
+    setDataSwitchingMessage('正在开卷呈纳典范远征战报...');
+    setTimeout(() => {
+      saveExpeditionsToStorage(INITIAL_EXPEDITIONS);
+      setDataSwitchingMessage(null);
+      showToast('已成功载入典范远征战报范本', 'success');
+    }, 550);
+  };
+
   // Export Data JSON
   const handleExportData = () => {
     const dataToExport = {
@@ -523,6 +597,8 @@ export default function App() {
       neibanRecords,
       daozhangRecords,
       treasures,
+      expeditions,
+      weeklyPlanner,
       config,
       assistant,
       exportedAt: new Date().toISOString(),
@@ -561,6 +637,12 @@ export default function App() {
           if (imported.treasures && Array.isArray(imported.treasures)) {
             saveTreasuresToStorage(imported.treasures);
           }
+          if (imported.expeditions && Array.isArray(imported.expeditions)) {
+            saveExpeditionsToStorage(imported.expeditions);
+          }
+          if (imported.weeklyPlanner) {
+            saveWeeklyPlannerToStorage(imported.weeklyPlanner);
+          }
           if (imported.config) {
             handleUpdateConfig(imported.config);
           }
@@ -578,6 +660,11 @@ export default function App() {
     };
     reader.readAsText(file);
     e.target.value = '';
+  };
+
+  const saveWeeklyPlannerToStorage = (updated: WeeklyPlannerData) => {
+    setWeeklyPlanner(updated);
+    localStorage.setItem('benwan_planner', JSON.stringify(updated));
   };
 
   const handleToggleTheme = () => {
@@ -630,6 +717,11 @@ export default function App() {
       <Header
         honmaruName={config.honmaruName || '大和'}
         saniwaName={config.saniwaName || '审神者'}
+        activeMainView={activeMainView}
+        onSelectMainView={(v) => {
+          if (config.audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
+          setActiveMainView(v);
+        }}
         onOpenNewNote={() => {
           if (config.audioEnabled) soundManager.playInteractionSound(config.ambientSoundType, config.customAudioUrl, 'stroke');
           handleOpenNewNote();
@@ -663,22 +755,36 @@ export default function App() {
         }}
       />
 
-      {/* Main Notes, Neiban, and Divination Area */}
+      {/* Main Area: 奏帖随笔便签 or 周度手札 (Weekly Planner) */}
       <main className="flex-1 flex flex-col pb-20">
-        <NotesSection
-          notes={notes}
-          neibanRecords={neibanRecords}
-          daozhangRecords={daozhangRecords}
-          honmaruName={config.honmaruName || '大和'}
-          saniwaName={config.saniwaName || '主殿'}
-          onOpenNote={handleOpenNoteForEdit}
-          onAddNeiban={handleAddNeiban}
-          onToggleNeiban={handleToggleNeiban}
-          onUpdateNeibanStatus={handleUpdateNeibanStatus}
-          onDeleteNeiban={handleDeleteNeiban}
-          onLoadPresetNeiban={handleLoadPresetNeiban}
-          showToast={showToast}
-        />
+        {activeMainView === 'notes' ? (
+          <NotesSection
+            notes={notes}
+            neibanRecords={neibanRecords}
+            daozhangRecords={daozhangRecords}
+            expeditions={expeditions}
+            honmaruName={config.honmaruName || '大和'}
+            saniwaName={config.saniwaName || '主殿'}
+            onOpenNote={handleOpenNoteForEdit}
+            onAddNeiban={handleAddNeiban}
+            onToggleNeiban={handleToggleNeiban}
+            onUpdateNeibanStatus={handleUpdateNeibanStatus}
+            onDeleteNeiban={handleDeleteNeiban}
+            onLoadPresetNeiban={handleLoadPresetNeiban}
+            onAddExpedition={handleAddExpedition}
+            onUpdateExpedition={handleUpdateExpedition}
+            onDeleteExpedition={handleDeleteExpedition}
+            onLoadPresetExpeditions={handleLoadPresetExpeditions}
+            showToast={showToast}
+          />
+        ) : (
+          <WeeklyPlanner
+            planner={weeklyPlanner}
+            onSavePlanner={saveWeeklyPlannerToStorage}
+            showToast={showToast}
+            audioEnabled={config.audioEnabled || false}
+          />
+        )}
       </main>
 
       {/* Bottom Assistant Widget (Click to designate secretary or view today's fortune) */}

@@ -8,6 +8,7 @@ import {
   SwordType,
 } from '../types';
 import { TreasureGallery } from './TreasureGallery';
+import { SchoolMonWatermark } from './SchoolMonWatermark';
 import {
   X,
   Plus,
@@ -32,6 +33,8 @@ import {
   Send,
   Gift,
   UserCheck,
+  Copy,
+  Maximize2,
 } from 'lucide-react';
 
 interface DaozhangModalProps {
@@ -118,8 +121,12 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
 
   // Memo entry form state inside detail view
   const [isAddingMemo, setIsAddingMemo] = useState(false);
+  const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
   const [memoCategory, setMemoCategory] = useState<'互动小记' | '刀装心得' | '问答签文' | '出阵手札'>('互动小记');
   const [memoContent, setMemoContent] = useState('');
+  const [memoDisplayStyle, setMemoDisplayStyle] = useState<'list' | 'card'>('list');
+  const [cardPreviewModalMemo, setCardPreviewModalMemo] = useState<DaozhangMemoEntry | null>(null);
+  const [cardPaperTheme, setCardPaperTheme] = useState<'sakura' | 'night' | 'bamboo' | 'gold'>('sakura');
 
   const currentRecord = records.find((r) => r.id === selectedRecordId);
 
@@ -135,27 +142,52 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
     showToast(`【${record.name}】羁绊值升至 ${clamped} 星！心犀相通`);
   };
 
-  // Add memo entry to current record
-  const handleAddMemoEntry = (e: React.FormEvent) => {
+  // Add or update memo entry to current record
+  const handleSaveMemoEntry = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentRecord || !memoContent.trim()) return;
 
-    const newEntry: DaozhangMemoEntry = {
-      id: `memo-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
-      category: memoCategory,
-      content: memoContent.trim(),
-    };
+    let updatedEntries: DaozhangMemoEntry[];
+    if (editingMemoId) {
+      // Editing existing memo
+      updatedEntries = (currentRecord.memoEntries || []).map((m) =>
+        m.id === editingMemoId
+          ? {
+              ...m,
+              category: memoCategory,
+              content: memoContent.trim(),
+            }
+          : m
+      );
+      showToast(`已更新【${currentRecord.name}】的${memoCategory}`);
+    } else {
+      // Adding new memo
+      const newEntry: DaozhangMemoEntry = {
+        id: `memo-${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        category: memoCategory,
+        content: memoContent.trim(),
+      };
+      updatedEntries = [newEntry, ...(currentRecord.memoEntries || [])];
+      showToast(`已增补【${currentRecord.name}】的${memoCategory}`);
+    }
 
     const updated: DaozhangRecord = {
       ...currentRecord,
-      memoEntries: [newEntry, ...(currentRecord.memoEntries || [])],
+      memoEntries: updatedEntries,
     };
 
     onSaveRecord(updated, false);
     setMemoContent('');
+    setEditingMemoId(null);
     setIsAddingMemo(false);
-    showToast(`已增补【${currentRecord.name}】的${memoCategory}`);
+  };
+
+  const handleStartEditMemo = (memo: DaozhangMemoEntry) => {
+    setEditingMemoId(memo.id);
+    setMemoCategory(memo.category);
+    setMemoContent(memo.content);
+    setIsAddingMemo(true);
   };
 
   // Delete memo entry from current record
@@ -1252,7 +1284,36 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* View Mode Switcher: 条目列表 vs 刀纹卡片风格 */}
+                  {currentRecord.memoEntries && currentRecord.memoEntries.length > 0 && (
+                    <div className="flex items-center p-0.5 rounded-lg bg-[var(--search-bg)] border border-[var(--border-color)] text-[11px] font-serif shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setMemoDisplayStyle('list')}
+                        className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                          memoDisplayStyle === 'list'
+                            ? 'bg-[var(--panel-color)] text-[var(--header-red)] font-bold shadow-2xs border border-[var(--sakura-pink)]/50'
+                            : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'
+                        }`}
+                      >
+                        条目列表
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMemoDisplayStyle('card')}
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                          memoDisplayStyle === 'card'
+                            ? 'bg-[var(--panel-color)] text-[var(--header-red)] font-bold shadow-2xs border border-[var(--sakura-pink)]/50'
+                            : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'
+                        }`}
+                      >
+                        <Sparkles className="w-3 h-3 text-[var(--accent-gold)]" />
+                        <span>刀纹卡片风格</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Shortcut to view this sword's treasures in TreasureGallery */}
                   <button
                     type="button"
@@ -1269,23 +1330,35 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setIsAddingMemo(!isAddingMemo)}
+                    onClick={() => {
+                      if (isAddingMemo) {
+                        setIsAddingMemo(false);
+                        setEditingMemoId(null);
+                        setMemoContent('');
+                      } else {
+                        setIsAddingMemo(true);
+                        setEditingMemoId(null);
+                        setMemoContent('');
+                      }
+                    }}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--sakura-soft)] text-[var(--sakura-deep)] hover:bg-[var(--sakura-pink)]/40 text-xs font-serif font-semibold cursor-pointer transition-colors shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>{isAddingMemo ? '收起录入' : '题写备忘'}</span>
+                    <span>{isAddingMemo ? '收起面板' : '题写备忘'}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Form to add a new memo entry */}
+              {/* Form to add or edit a memo entry */}
               {isAddingMemo && (
                 <form
-                  onSubmit={handleAddMemoEntry}
+                  onSubmit={handleSaveMemoEntry}
                   className="p-3.5 rounded-lg bg-[var(--search-bg)] border border-[var(--border-color)] space-y-3 animate-fadeIn text-xs"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-[var(--text-color)] font-serif">备忘类型:</span>
+                    <span className="font-bold text-[var(--text-color)] font-serif">
+                      {editingMemoId ? '修改备忘类型:' : '备忘类型:'}
+                    </span>
                     {(['互动小记', '刀装心得', '问答签文', '出阵手札'] as const).map((cat) => (
                       <button
                         key={cat}
@@ -1314,7 +1387,11 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                   <div className="flex items-center justify-end gap-2">
                     <button
                       type="button"
-                      onClick={() => setIsAddingMemo(false)}
+                      onClick={() => {
+                        setIsAddingMemo(false);
+                        setEditingMemoId(null);
+                        setMemoContent('');
+                      }}
                       className="px-3 py-1 rounded text-[var(--text-muted)] hover:text-[var(--text-color)] cursor-pointer"
                     >
                       取消
@@ -1323,20 +1400,21 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                       type="submit"
                       className="flex items-center gap-1 px-4 py-1.5 rounded-lg bg-[var(--sakura-deep)] text-white font-bold font-serif hover:bg-[var(--sakura-deep)]/90 cursor-pointer shadow-xs"
                     >
-                      <Send className="w-3 h-3" />
-                      <span>收录至备忘录</span>
+                      <Check className="w-3 h-3" />
+                      <span>{editingMemoId ? '保存修改' : '收录至备忘录'}</span>
                     </button>
                   </div>
                 </form>
               )}
 
-              {/* Entries list */}
+              {/* Entries rendering: List View or Card Grid View */}
               {(!currentRecord.memoEntries || currentRecord.memoEntries.length === 0) ? (
                 <div className="py-6 text-center text-xs text-[var(--text-muted)] font-serif italic border border-dashed border-[var(--border-color)] rounded-lg">
                   「暂无备忘条目。主殿，可点击右上角『题写备忘』记录今日与{currentRecord.name}的互动或签文。」
                 </div>
-              ) : (
-                <div className="space-y-2.5">
+              ) : memoDisplayStyle === 'card' ? (
+                /* Card Grid View (带有该刀流派刀纹背景的卡片风格视图) */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 animate-fadeIn">
                   {currentRecord.memoEntries.map((memo) => {
                     const badgeStyles = {
                       '互动小记': 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800',
@@ -1348,9 +1426,103 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                     return (
                       <div
                         key={memo.id}
-                        className="p-3.5 rounded-xl bg-[var(--search-bg)] border border-[var(--border-color)] hover:border-[var(--sakura-pink)] transition-all group"
+                        className="p-4 rounded-2xl bg-[var(--panel-color)] border-2 border-[var(--sakura-pink)]/70 hover:border-[var(--accent-gold)] transition-all relative overflow-hidden shadow-sm flex flex-col justify-between group min-h-[170px]"
                       >
-                        <div className="flex items-center justify-between mb-1.5">
+                        {/* 流派刀纹背景水印 (School Crest Watermark) */}
+                        <div className="absolute -right-5 -bottom-5 pointer-events-none text-[var(--sakura-deep)] opacity-25 dark:opacity-20 transition-transform group-hover:scale-105">
+                          <SchoolMonWatermark
+                            school={currentRecord.school}
+                            name={currentRecord.name}
+                            className="w-36 h-36"
+                          />
+                        </div>
+
+                        {/* Top Card Info Bar */}
+                        <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]/70 relative z-10">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-serif font-bold border ${badgeStyles}`}>
+                              {memo.category}
+                            </span>
+                            <span className="text-[10px] font-serif font-bold text-[var(--header-red)]">
+                              {currentRecord.school || '无铭'}派
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                              {memo.date}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Card Content Quote */}
+                        <div className="my-2.5 relative z-10 flex-1">
+                          <p className="text-xs sm:text-sm font-serif leading-relaxed text-[var(--text-color)] whitespace-pre-wrap pl-0.5">
+                            “{memo.content}”
+                          </p>
+                        </div>
+
+                        {/* Card Footer Actions */}
+                        <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center justify-between relative z-10">
+                          <button
+                            type="button"
+                            onClick={() => setCardPreviewModalMemo(memo)}
+                            className="flex items-center gap-1 text-[11px] font-serif font-bold text-[var(--header-red)] hover:underline cursor-pointer"
+                            title="放大全屏鉴赏与复制"
+                          >
+                            <Sparkles className="w-3 h-3 text-[var(--accent-gold)]" />
+                            <span>鉴赏卡片</span>
+                          </button>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditMemo(memo)}
+                              className="px-2 py-0.5 rounded text-[11px] border border-[var(--border-color)] bg-[var(--search-bg)] text-[var(--sakura-deep)] hover:bg-[var(--sakura-soft)] cursor-pointer transition-colors"
+                              title="修改/编辑该条备忘"
+                            >
+                              修改
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMemoEntry(memo.id)}
+                              className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer transition-colors"
+                              title="删除该条备忘"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* List View */
+                <div className="space-y-3">
+                  {currentRecord.memoEntries.map((memo) => {
+                    const badgeStyles = {
+                      '互动小记': 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+                      '刀装心得': 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+                      '问答签文': 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+                      '出阵手札': 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+                    }[memo.category] || 'bg-gray-100 text-gray-700';
+
+                    return (
+                      <div
+                        key={memo.id}
+                        className="p-4 rounded-xl bg-[var(--panel-color)] border border-[var(--border-color)] hover:border-[var(--sakura-pink)] transition-all relative overflow-hidden shadow-2xs group"
+                      >
+                        {/* 流派刀纹背景水印 (School Crest Watermark) */}
+                        <div className="absolute -right-4 -bottom-4 pointer-events-none text-[var(--sakura-deep)] opacity-20 dark:opacity-15">
+                          <SchoolMonWatermark
+                            school={currentRecord.school}
+                            name={currentRecord.name}
+                            className="w-28 h-28"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between mb-2 relative z-10 flex-wrap gap-2">
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-serif font-bold border ${badgeStyles}`}>
                               {memo.category}
@@ -1358,17 +1530,47 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                             <span className="text-[10px] font-mono text-[var(--text-muted)]">
                               {memo.date}
                             </span>
+                            {currentRecord.school && (
+                              <span className="text-[9px] font-serif px-1.5 py-0.2 rounded bg-[var(--sakura-soft)] text-[var(--text-muted)]">
+                                {currentRecord.school}派
+                              </span>
+                            )}
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteMemoEntry(memo.id)}
-                            className="text-gray-400 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                            title="删除该条备忘"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+
+                          {/* Clear and Always-Accessible Action Buttons */}
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setCardPreviewModalMemo(memo)}
+                              className="flex items-center gap-1 px-2.5 py-0.5 rounded border border-[var(--sakura-pink)] bg-[var(--sakura-soft)] text-[var(--header-red)] hover:bg-[var(--sakura-pink)]/40 cursor-pointer font-serif text-[11px] font-semibold transition-colors shadow-2xs"
+                              title="生成带有流派刀纹背景的卡片风格视图"
+                            >
+                              <Sparkles className="w-3 h-3 text-[var(--accent-gold)]" />
+                              <span>生成卡片</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditMemo(memo)}
+                              className="flex items-center gap-1 px-2 py-0.5 rounded border border-[var(--border-color)] bg-[var(--search-bg)] text-[var(--sakura-deep)] hover:bg-[var(--sakura-soft)] cursor-pointer transition-colors text-[11px] font-medium"
+                              title="修改/编辑该条备忘"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              <span>修改</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMemoEntry(memo.id)}
+                              className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-[var(--search-bg)] cursor-pointer transition-colors"
+                              title="删除该条备忘"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-xs sm:text-sm font-serif leading-relaxed text-[var(--text-color)] whitespace-pre-wrap pl-0.5">
+
+                        <p className="text-xs sm:text-sm font-serif leading-relaxed text-[var(--text-color)] whitespace-pre-wrap pl-0.5 relative z-10 opacity-95">
                           {memo.content}
                         </p>
                       </div>
@@ -1491,6 +1693,183 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                 >
                   确认除名
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Memo School Crest Card Preview Modal (生成带有该刀流派刀纹背景的卡片风格视图) */}
+        {cardPreviewModalMemo && currentRecord && (
+          <div
+            className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs animate-fadeIn"
+            onClick={() => setCardPreviewModalMemo(null)}
+          >
+            <div
+              className="w-full max-w-lg rounded-2xl shadow-2xl p-6 sm:p-7 relative overflow-hidden animate-scaleIn border-2 border-[var(--accent-gold)]"
+              style={{
+                backgroundColor:
+                  cardPaperTheme === 'sakura'
+                    ? '#fff5f7'
+                    : cardPaperTheme === 'night'
+                    ? '#0f1423'
+                    : cardPaperTheme === 'bamboo'
+                    ? '#f4f9f4'
+                    : '#faf6eb',
+                color:
+                  cardPaperTheme === 'night'
+                    ? '#e2e8f0'
+                    : '#2d3748',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* School Crest Watermark in full size */}
+              <div
+                className="absolute -right-8 -bottom-8 pointer-events-none transition-opacity select-none"
+                style={{
+                  opacity: cardPaperTheme === 'night' ? 0.22 : 0.18,
+                  color: cardPaperTheme === 'night' ? '#d97706' : '#a83232',
+                }}
+              >
+                <SchoolMonWatermark
+                  school={currentRecord.school}
+                  name={currentRecord.name}
+                  className="w-64 h-64 sm:w-80 sm:h-80"
+                />
+              </div>
+
+              {/* Decorative Gold Header Ribbon */}
+              <div className="flex items-center justify-between pb-3 border-b border-black/10 dark:border-white/10 relative z-10">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--accent-gold)] text-white font-serif font-bold shadow-2xs">
+                    本丸手札 · 刀剑寄语笺
+                  </span>
+                  <span className="text-xs font-mono opacity-60">
+                    {cardPreviewModalMemo.date}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => setCardPreviewModalMemo(null)}
+                  className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-gray-500 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Card Content Area */}
+              <div className="my-5 space-y-4 relative z-10">
+                {/* Sword Title & School Crest Info */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xl sm:text-2xl font-serif font-black tracking-wider text-[var(--header-red)]">
+                      {currentRecord.name}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-xs font-serif opacity-75">
+                      <span>{currentRecord.number}</span>
+                      <span>·</span>
+                      <span>{currentRecord.swordType}</span>
+                      <span>·</span>
+                      <span className="font-bold">{currentRecord.school || '无铭'}派</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end">
+                    <span className="px-2.5 py-0.5 rounded text-[11px] font-serif font-bold bg-[var(--sakura-soft)] text-[var(--header-red)] border border-[var(--sakura-pink)]">
+                      {cardPreviewModalMemo.category}
+                    </span>
+                    <div className="flex items-center gap-0.5 mt-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={`w-3 h-3 ${
+                            s <= (currentRecord.bondLevel || 1)
+                              ? 'fill-[var(--accent-gold)] text-[var(--accent-gold)]'
+                              : 'opacity-30'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Memo Quote Text with Calligraphic Box */}
+                <div
+                  className="p-4 sm:p-5 rounded-xl border border-black/10 dark:border-white/10 backdrop-blur-xs font-serif text-sm sm:text-base leading-relaxed whitespace-pre-wrap relative shadow-xs"
+                  style={{
+                    backgroundColor:
+                      cardPaperTheme === 'night'
+                        ? 'rgba(255,255,255,0.06)'
+                        : 'rgba(255,255,255,0.7)',
+                  }}
+                >
+                  <span className="text-2xl text-[var(--accent-gold)] opacity-50 absolute left-2 top-1 font-serif select-none">“</span>
+                  <p className="px-3 py-1 font-serif leading-relaxed">{cardPreviewModalMemo.content}</p>
+                  <span className="text-2xl text-[var(--accent-gold)] opacity-50 absolute right-2 bottom-1 font-serif select-none">”</span>
+                </div>
+
+                {/* Traditional Japanese Cinnabar Seal Stamp */}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-1.5 text-[11px] font-serif opacity-70">
+                    <span>于本丸岁月静好中题记</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 select-none">
+                    <div className="w-9 h-9 rounded-sm border-2 border-red-600 text-red-600 flex items-center justify-center font-serif text-[10px] font-bold leading-none rotate-3 shadow-2xs">
+                      本丸<br />御定
+                    </div>
+                    <div className="w-9 h-9 rounded-full border-2 border-red-600 text-red-600 flex items-center justify-center font-serif text-[10px] font-bold leading-none -rotate-6 shadow-2xs">
+                      心犀<br />相通
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Paper Theme Selectors & Action Buttons */}
+              <div className="pt-3 border-t border-black/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-serif opacity-75 text-[11px]">和纸风雅:</span>
+                  {(
+                    [
+                      { id: 'sakura', name: '🌸 绯樱', bg: '#fff5f7' },
+                      { id: 'night', name: '🌙 夜阑', bg: '#0f1423' },
+                      { id: 'bamboo', name: '🎋 幽竹', bg: '#f4f9f4' },
+                      { id: 'gold', name: '🪙 泥金', bg: '#faf6eb' },
+                    ] as const
+                  ).map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setCardPaperTheme(t.id)}
+                      className={`px-2 py-0.5 rounded text-[11px] font-serif cursor-pointer transition-all border ${
+                        cardPaperTheme === t.id
+                          ? 'border-[var(--accent-gold)] font-bold shadow-xs scale-105'
+                          : 'border-transparent opacity-60 hover:opacity-100'
+                      }`}
+                      style={{ backgroundColor: t.bg, color: t.id === 'night' ? '#e2e8f0' : '#2d3748' }}
+                    >
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <button
+                    onClick={() => {
+                      const textToCopy = `【本丸手札 · 刀剑寄语卡】\n男士：${currentRecord.name} (${currentRecord.school || ''}派 ${currentRecord.swordType})\n类别：${cardPreviewModalMemo.category}\n日期：${cardPreviewModalMemo.date}\n寄语：“${cardPreviewModalMemo.content}”\n—— 本丸御定 · 心犀相通`;
+                      navigator.clipboard.writeText(textToCopy);
+                      showToast(`已复制【${currentRecord.name}】卡片寄语到剪贴板！`);
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-gold)] text-white font-serif font-bold hover:brightness-105 cursor-pointer shadow-xs"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>复制卡片文札</span>
+                  </button>
+                  <button
+                    onClick={() => setCardPreviewModalMemo(null)}
+                    className="px-3.5 py-1.5 rounded-lg border border-black/20 dark:border-white/20 font-serif cursor-pointer hover:bg-black/5"
+                  >
+                    关闭
+                  </button>
+                </div>
               </div>
             </div>
           </div>
