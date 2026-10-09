@@ -1,4 +1,4 @@
-import { DaozhangRecord, NeibanRecord, Note, TreasureItem, ExpeditionRecord } from './types';
+import { DaozhangRecord, NeibanRecord, Note, TreasureItem, ExpeditionRecord, WeeklyPlannerData } from './types';
 
 // 预设经典刀剑范本（可供用户在需要时自愿点击“载入经典刀剑范本”引入，默认不强行预置）
 export const CLASSIC_PRESET_SWORDS: DaozhangRecord[] = [
@@ -244,57 +244,69 @@ export const INITIAL_NEIBAN: NeibanRecord[] = [];
 export const INITIAL_PRESET_TREASURES: TreasureItem[] = [];
 
 // 系统初始周度手札 (Weekly Planner) 经典范本
-export const INITIAL_WEEKLY_PLANNER = {
+const defaultInitialDays = {
+  mon: [
+    { id: 'm1', text: '准时出阵与演练', done: true },
+    { id: 'm2', text: '本丸回廊整理', done: false },
+    { id: 'm3', text: '完成手帐随笔', done: false },
+    { id: 'm4', text: '刀装锻造研习', done: false },
+    { id: 'm5', text: '运动 30 min', done: false },
+  ],
+  tue: [
+    { id: 't1', text: '马当番照料', done: false },
+    { id: 't2', text: '寝室整理与通风', done: false },
+    { id: 't3', text: '去万屋采买点心', done: false },
+    { id: 't4', text: '背 50 个词汇', done: false },
+    { id: 't5', text: '运动 30 min', done: false },
+  ],
+  wed: [
+    { id: 'w1', text: '准时就寝不熬夜', done: false },
+    { id: 'w2', text: '完成周中汇报', done: false },
+    { id: 'w3', text: '给近侍挑选景趣', done: false },
+    { id: 'w4', text: '运动 30 min', done: false },
+  ],
+  thu: [
+    { id: 'th1', text: '准时出阵', done: false },
+    { id: 'th2', text: '畑当番蔬菜采收', done: false },
+    { id: 'th3', text: '阅读 30 min', done: false },
+    { id: 'th4', text: '整理刀账番号', done: false },
+  ],
+  fri: [
+    { id: 'f1', text: '背 50 个词汇', done: false },
+    { id: 'f2', text: '运动 30 min', done: false },
+    { id: 'f3', text: '周末行程提前安排', done: true },
+    { id: 'f4', text: '和同僚战友小聚', done: false },
+  ],
+  sat: [
+    { id: 'sa1', text: '连队战冲刺御岁魂', done: false },
+    { id: 'sa2', text: '给爱刀拍摄宝物立拍得', done: false },
+    { id: 'sa3', text: '现世大采购', done: false },
+  ],
+  sun: [
+    { id: 'su1', text: '复盘本周周度目标达成', done: false },
+    { id: 'su2', text: '制定下周目标', done: false },
+    { id: 'su3', text: '早睡养精蓄锐', done: false },
+  ],
+};
+
+const defaultInitialGoal = '每周定好目标，一周后确认是否达成。\n用 habit tracker 来提高做事效率，\n计划每日必做的事情。';
+const defaultInitialSticky = '12.21  逛街买谷\n12.25  现世聚会\n12.27  连队战十万魂冲刺';
+
+export const INITIAL_WEEKLY_PLANNER: WeeklyPlannerData = {
   id: 'current-week',
   year: 2026,
   monthIndex: 12,
   weekIndex: 4,
-  goalMemo: '每周定好目标，一周后确认是否达成。\n用 habit tracker 来提高做事效率，\n计划每日必做的事情。',
-  days: {
-    mon: [
-      { id: 'm1', text: '准时出阵与演练', done: true },
-      { id: 'm2', text: '本丸回廊整理', done: false },
-      { id: 'm3', text: '完成手帐随笔', done: false },
-      { id: 'm4', text: '刀装锻造研习', done: false },
-      { id: 'm5', text: '运动 30 min', done: false },
-    ],
-    tue: [
-      { id: 't1', text: '马当番照料', done: false },
-      { id: 't2', text: '寝室整理与通风', done: false },
-      { id: 't3', text: '去万屋采买点心', done: false },
-      { id: 't4', text: '背 50 个词汇', done: false },
-      { id: 't5', text: '运动 30 min', done: false },
-    ],
-    wed: [
-      { id: 'w1', text: '准时就寝不熬夜', done: false },
-      { id: 'w2', text: '完成周中汇报', done: false },
-      { id: 'w3', text: '给近侍挑选景趣', done: false },
-      { id: 'w4', text: '运动 30 min', done: false },
-    ],
-    thu: [
-      { id: 'th1', text: '准时出阵', done: false },
-      { id: 'th2', text: '畑当番蔬菜采收', done: false },
-      { id: 'th3', text: '阅读 30 min', done: false },
-      { id: 'th4', text: '整理刀账番号', done: false },
-    ],
-    fri: [
-      { id: 'f1', text: '背 50 个词汇', done: false },
-      { id: 'f2', text: '运动 30 min', done: false },
-      { id: 'f3', text: '周末行程提前安排', done: true },
-      { id: 'f4', text: '和同僚战友小聚', done: false },
-    ],
-    sat: [
-      { id: 'sa1', text: '连队战冲刺御岁魂', done: false },
-      { id: 'sa2', text: '给爱刀拍摄宝物立拍得', done: false },
-      { id: 'sa3', text: '现世大采购', done: false },
-    ],
-    sun: [
-      { id: 'su1', text: '复盘本周周度目标达成', done: false },
-      { id: 'su2', text: '制定下周目标', done: false },
-      { id: 'su3', text: '早睡养精蓄锐', done: false },
-    ],
+  goalMemo: defaultInitialGoal,
+  days: defaultInitialDays,
+  todoStickyNotes: defaultInitialSticky,
+  weeks: {
+    '2026-M12-W4': {
+      goalMemo: defaultInitialGoal,
+      days: defaultInitialDays,
+      todoStickyNotes: defaultInitialSticky,
+    },
   },
-  todoStickyNotes: '12.21  逛街买谷\n12.25  现世聚会\n12.27  连队战十万魂冲刺',
 };
 
 // 预设远征战报示例清单

@@ -258,29 +258,87 @@ export const GENERAL_QUOTES = [
   '清晨出鞘闻龙吟，暮归回鞘沐夕晖。主殿，今日亦平安顺遂。',
 ];
 
-// 常见吉相宜忌词库
-const ALL_GOOD = [
-  '锻造名刃',
-  '整军出征',
-  '马当番',
-  '精铸刀装',
-  '登用新刃',
-  '远征筹粮',
-  '演练切磋',
-  '沐浴理发',
-  '封缄奏帖',
-  '品茗会友',
+// 常见吉相宜忌词库 (扩展至60条和风本丸吉相与规诫词汇)
+export const ALL_GOOD = [
+  '锻造名刃', '整军出征', '马当番', '精铸刀装', '登用新刃',
+  '远征筹粮', '演练切磋', '沐浴理发', '封缄奏帖', '品茗会友',
+  '田当番', '手合锻炼', '手入修复', '整理兵库', '清点资材',
+  '擦拭刀身', '更换刀装', '查阅战报', '巡视本丸', '晨起点名',
+  '夜间巡逻', '修缮廊下', '打扫庭院', '晾晒御守', '赏樱观月',
+  '静坐练字', '研墨抄经', '烹制点心', '备办宴席', '与近侍对弈',
+  '翻阅古籍', '整理账册', '修剪庭木', '擦拭刀架', '缝补战袍',
+  '调配药膏', '添置新茶', '悬挂风铃', '清扫锻刀房', '晾晒被褥',
+  '陪短刀游戏', '照看马匹', '灶前试味', '登记战功', '校对出阵表',
+  '更换拉门纸', '添购砥石', '巡查结界', '练习居合', '重读旧信',
+  '书写日记', '与同僚谈心', '散步庭前', '晒太阳', '早睡养神',
+  '整顿队伍编成', '赠送御守', '道谢同袍', '拜访神社', '收拾行装',
 ];
 
-const ALL_BAD = [
-  '轻敌冒进',
-  '强行锻刀',
-  '懈怠内番',
-  '刀装碎裂',
-  '盲目单骑',
-  '心浮气躁',
-  '熬夜阅卷',
+export const ALL_BAD = [
+  '轻敌冒进', '强行锻刀', '懈怠内番', '刀装碎裂', '盲目单骑',
+  '心浮气躁', '熬夜阅卷',
+  '拖延手入', '空腹出阵', '无视远征归来', '临阵换队', '乱花资源',
+  '暴食暴饮', '晨起迟到', '争吵拌嘴', '迁怒近侍', '擅自开炉',
+  '疏于巡夜', '积压文书', '遗忘御守', '刀身积尘', '带伤出阵',
+  '逞强硬撑', '夜半喧哗', '乱动他人刀架', '随意取笑', '揭人旧事',
+  '忽视短刀', '冷落兄弟', '无端猜疑', '轻信传言', '空许承诺',
+  '浪费茶饭', '弄脏白布', '踩踏庭苔', '拆东补西', '盲目囤积',
+  '钻牛角尖', '拖欠回信', '贪功冒领', '错过点名', '偷懒耍滑',
+  '不看战报', '刀装带错', '乱放砥石', '深夜锻刀', '通宵游戏',
+  '抱怨连连', '过度自责', '与人赌气', '沉溺旧事', '拒绝帮助',
+  '忘记道谢', '敷衍了事', '边走边看战报', '缺席手合', '疏忽结界',
+  '夸夸其谈', '过度攀比', '临时变卦',
 ];
+
+// Helper to check if a Neiban task matches today's '宜' (神佑)
+export function isNeibanBlessed(
+  neibanType: string,
+  goodFor: string[]
+): { isBlessed: boolean; matchedReason?: string } {
+  if (!goodFor || goodFor.length === 0) return { isBlessed: false };
+  for (const good of goodFor) {
+    if (good === neibanType) {
+      return { isBlessed: true, matchedReason: good };
+    }
+    // 马当番 / 照看马匹
+    if (neibanType === '马当番' && (good === '马当番' || good === '照看马匹' || good.includes('马'))) {
+      return { isBlessed: true, matchedReason: good };
+    }
+    // 畑当番 / 田当番
+    if (neibanType === '畑当番' && (good === '田当番' || good === '畑当番' || good.includes('田') || good.includes('畑'))) {
+      return { isBlessed: true, matchedReason: good };
+    }
+    // 手合场 / 手合锻炼
+    if (neibanType === '手合场' && (good === '手合锻炼' || good === '手合场' || good.includes('手合'))) {
+      return { isBlessed: true, matchedReason: good };
+    }
+    // 寝当番 / 早睡养神 / 晾晒被褥
+    if (neibanType === '寝当番' && (good === '寝当番' || good.includes('早睡') || good.includes('被褥') || good.includes('寝'))) {
+      return { isBlessed: true, matchedReason: good };
+    }
+  }
+  return { isBlessed: false };
+}
+
+// Helper to check if a Neiban task matches today's '忌'
+export function isNeibanTaboo(
+  neibanType: string,
+  badFor: string[]
+): { isTaboo: boolean; matchedReason?: string } {
+  if (!badFor || badFor.length === 0) return { isTaboo: false };
+  for (const bad of badFor) {
+    if (bad === '懈怠内番' || bad.includes('内番')) {
+      return { isTaboo: true, matchedReason: bad };
+    }
+    if (neibanType === '手合场' && (bad === '缺席手合' || bad.includes('手合'))) {
+      return { isTaboo: true, matchedReason: bad };
+    }
+    if (bad === neibanType || bad.includes(neibanType)) {
+      return { isTaboo: true, matchedReason: bad };
+    }
+  }
+  return { isTaboo: false };
+}
 
 // 计算简单的农历对应展示（基于日期的伪随机确定性算法）
 export function generateDailyFortune(
@@ -295,8 +353,8 @@ export function generateDailyFortune(
     date.getDay()
   ];
 
-  // 固定的日期种子
-  const seed = year * 10000 + month * 100 + day;
+  // 固定的日期种子 (若是刷新时传入毫秒不同，可生成不同随机)
+  const seed = Math.floor(date.getTime() / 1000) + year * 10000 + month * 100 + day;
 
   // 随机函数
   const pseudoRand = (s: number) => {
@@ -325,28 +383,50 @@ export function generateDailyFortune(
   const charData = SWORD_CHARACTER_QUOTES[asstName];
   let quote = '';
   let characterTitle = asstSchool ? `${asstSchool} · 本丸近侍` : '本丸近侍';
-  let goodFor: string[] = [];
-  let badFor: string[] = [];
+  const goodSet = new Set<string>();
+  const badSet = new Set<string>();
 
   if (charData) {
     const qIdx = Math.floor(pseudoRand(seed + 1) * charData.quotes.length);
     quote = charData.quotes[qIdx];
     characterTitle = charData.title;
-    goodFor = [...charData.good];
-    badFor = [...charData.bad];
+
+    // 近侍特色宜项 (1项)
+    if (charData.good && charData.good.length > 0) {
+      const gIdx = Math.floor(pseudoRand(seed + 2) * charData.good.length);
+      goodSet.add(charData.good[gIdx]);
+    }
+    // 近侍特色忌项 (1项)
+    if (charData.bad && charData.bad.length > 0) {
+      const bIdx = Math.floor(pseudoRand(seed + 3) * charData.bad.length);
+      badSet.add(charData.bad[bIdx]);
+    }
   } else {
     // 通用刀男风格
     const qIdx = Math.floor(pseudoRand(seed + 1) * GENERAL_QUOTES.length);
     quote = `主殿，今日由我【${asstName}】辅佐，定护佑本丸平安。${GENERAL_QUOTES[qIdx]}`;
-    goodFor = [
-      ALL_GOOD[Math.floor(pseudoRand(seed + 2) * ALL_GOOD.length)],
-      ALL_GOOD[Math.floor(pseudoRand(seed + 3) * ALL_GOOD.length)],
-    ];
-    badFor = [
-      ALL_BAD[Math.floor(pseudoRand(seed + 4) * ALL_BAD.length)],
-      ALL_BAD[Math.floor(pseudoRand(seed + 5) * ALL_BAD.length)],
-    ];
   }
+
+  // 从丰富的 ALL_GOOD 词库中抽选，补齐至 3~4 项
+  let gSeedOffset = 4;
+  while (goodSet.size < 4) {
+    const candidate = ALL_GOOD[Math.floor(pseudoRand(seed + gSeedOffset) * ALL_GOOD.length)];
+    if (candidate) goodSet.add(candidate);
+    gSeedOffset++;
+    if (gSeedOffset > 30) break;
+  }
+
+  // 从丰富的 ALL_BAD 词库中抽选，补齐至 3 项
+  let bSeedOffset = 15;
+  while (badSet.size < 3) {
+    const candidate = ALL_BAD[Math.floor(pseudoRand(seed + bSeedOffset) * ALL_BAD.length)];
+    if (candidate) badSet.add(candidate);
+    bSeedOffset++;
+    if (bSeedOffset > 45) break;
+  }
+
+  const goodFor = Array.from(goodSet);
+  const badFor = Array.from(badSet);
 
   // 农历天干地支年份模拟 (2026年为丙午年)
   const ganzhiYears = ['甲辰', '乙巳', '丙午', '丁未', '戊申', '己酉', '庚戌', '辛亥'];

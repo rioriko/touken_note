@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { WeeklyPlannerData, WeekdayKey, WeeklyTodoItem } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { WeeklyPlannerData, WeekdayKey, WeeklyTodoItem, SingleWeekRecord } from '../types';
 import {
   Calendar,
   CheckSquare,
@@ -11,13 +11,15 @@ import {
   Sparkles,
   Edit3,
   RotateCcw,
+  Copy,
+  FolderPlus,
 } from 'lucide-react';
 import { soundManager } from '../utils/soundManager';
 
 interface WeeklyPlannerProps {
   planner: WeeklyPlannerData;
   onSavePlanner: (data: WeeklyPlannerData) => void;
-  showToast: (msg: string) => void;
+  showToast: (msg: string, type?: 'info' | 'success' | 'warning') => void;
   audioEnabled?: boolean;
 }
 
@@ -32,130 +34,396 @@ const ORDERED_WEEKDAYS: { key: WeekdayKey; en: string; cn: string; short: string
   { key: 'sun', en: 'SUN', cn: '周日 · 日曜日', short: '周日' },
 ];
 
+// Helper to generate unique key per week: "${year}-M${monthIndex}-W${weekIndex}"
+export function getWeekKey(year: number, monthIndex: number, weekIndex: number): string {
+  return `${year}-M${monthIndex}-W${weekIndex}`;
+}
+
 export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   planner,
   onSavePlanner,
   showToast,
   audioEnabled = false,
 }) => {
+  const currentYear = planner.year || 2026;
+  const currentMonth = planner.monthIndex || 10;
+  const currentWeek = planner.weekIndex || 1;
+  const currentWeekKey = getWeekKey(currentYear, currentMonth, currentWeek);
+
+  // 从按周独立存储的 weeks 字典中读取当前周的数据
+  const currentWeekRecord: SingleWeekRecord = useMemo(() => {
+    if (planner.weeks && planner.weeks[currentWeekKey]) {
+      const rec = planner.weeks[currentWeekKey];
+      return {
+        goalMemo: rec.goalMemo ?? '',
+        days: rec.days ?? { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+        todoStickyNotes: rec.todoStickyNotes ?? '',
+      };
+    }
+    // 兼容初始或旧数据根层级字段
+    if (
+      planner.days &&
+      Object.keys(planner.days).length > 0 &&
+      planner.year === currentYear &&
+      planner.monthIndex === currentMonth &&
+      planner.weekIndex === currentWeek
+    ) {
+      return {
+        goalMemo: planner.goalMemo ?? '',
+        days: planner.days ?? { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+        todoStickyNotes: planner.todoStickyNotes ?? '',
+      };
+    }
+    // 全新空白周
+    return {
+      goalMemo: '',
+      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+      todoStickyNotes: '',
+    };
+  }, [
+    planner.weeks,
+    currentWeekKey,
+    planner.year,
+    planner.monthIndex,
+    planner.weekIndex,
+    planner.days,
+    planner.goalMemo,
+    planner.todoStickyNotes,
+    currentYear,
+    currentMonth,
+    currentWeek,
+  ]);
+
   const [newTodoInputs, setNewTodoInputs] = useState<{ [key in WeekdayKey]?: string }>({});
   const [isEditingGoal, setIsEditingGoal] = useState(false);
-  const [goalText, setGoalText] = useState(planner.goalMemo || '');
+  const [goalText, setGoalText] = useState(currentWeekRecord.goalMemo || '');
   const [isEditingSticky, setIsEditingSticky] = useState(false);
-  const [stickyText, setStickyText] = useState(planner.todoStickyNotes || '');
+  const [stickyText, setStickyText] = useState(currentWeekRecord.todoStickyNotes || '');
+
+  // 当切换周或月份时，同步输入状态，防止跨周污染
+  useEffect(() => {
+    setGoalText(currentWeekRecord.goalMemo || '');
+    setStickyText(currentWeekRecord.todoStickyNotes || '');
+    setIsEditingGoal(false);
+    setIsEditingSticky(false);
+    setNewTodoInputs({});
+  }, [currentWeekKey]);
+
+  // 更新当前周数据的高阶函数，严格保证仅修改 weeks[currentWeekKey]
+  const updateCurrentWeek = (updater: (prev: SingleWeekRecord) => SingleWeekRecord) => {
+    const updatedRecord = updater(currentWeekRecord);
+    const updatedWeeks = {
+      ...(planner.weeks || {}),
+      [currentWeekKey]: updatedRecord,
+    };
+
+    onSavePlanner({
+      ...planner,
+      year: currentYear,
+      monthIndex: currentMonth,
+      weekIndex: currentWeek,
+      days: updatedRecord.days,
+      goalMemo: updatedRecord.goalMemo || '',
+      todoStickyNotes: updatedRecord.todoStickyNotes || '',
+      weeks: updatedWeeks,
+    });
+  };
+
+  // 统计某周记录的待办与便签总数（用于在月周面板显示小圆点）
+  const getWeekRecordCount = (year: number, m: number, w: number): number => {
+    const key = getWeekKey(year, m, w);
+    const rec = planner.weeks?.[key];
+    if (!rec) {
+      if (planner.year === year && planner.monthIndex === m && planner.weekIndex === w && planner.days) {
+        return Object.values(planner.days).reduce((acc, list) => acc + (list?.length || 0), 0);
+      }
+      return 0;
+    }
+    let count = 0;
+    if (rec.days) {
+      for (const list of Object.values(rec.days)) {
+        if (list) count += list.length;
+      }
+    }
+    if (rec.goalMemo?.trim()) count += 1;
+    if (rec.todoStickyNotes?.trim()) count += 1;
+    return count;
+  };
+
+  // 当前周所有待办项总数
+  const totalItemsInCurrentWeek = useMemo(() => {
+    let count = 0;
+    for (const list of Object.values(currentWeekRecord.days)) {
+      if (list) count += list.length;
+    }
+    return count;
+  }, [currentWeekRecord.days]);
 
   // 一键对齐当前现实时间周数
   const handleSyncCurrentRealTime = () => {
     const now = new Date();
-    const currentMonth = now.getMonth() + 1; // 1-12
+    const currentM = now.getMonth() + 1; // 1-12
     const date = now.getDate();
-    // 计算当月第几周 (1-5)
-    const currentWeek = Math.min(5, Math.max(1, Math.ceil(date / 7)));
+    const currentW = Math.min(5, Math.max(1, Math.ceil(date / 7)));
 
     if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
+
+    const targetKey = getWeekKey(now.getFullYear(), currentM, currentW);
+    const targetRecord = planner.weeks?.[targetKey] || {
+      goalMemo: '',
+      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+      todoStickyNotes: '',
+    };
 
     onSavePlanner({
       ...planner,
       year: now.getFullYear(),
-      monthIndex: currentMonth,
-      weekIndex: currentWeek,
+      monthIndex: currentM,
+      weekIndex: currentW,
+      days: targetRecord.days,
+      goalMemo: targetRecord.goalMemo || '',
+      todoStickyNotes: targetRecord.todoStickyNotes || '',
     });
-    showToast(`已对齐现世时间：${now.getFullYear()}年 ${currentMonth}月 · 第${currentWeek}周`);
+    showToast(`已对齐现世时间：${now.getFullYear()}年 ${currentM}月 · 第${currentW}周`);
   };
 
-  // Toggle Month Index (1-12)
+  // 切换月份 (1-12)
   const handleSelectMonth = (m: number) => {
     if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
+    const targetKey = getWeekKey(currentYear, m, currentWeek);
+    const targetRecord = planner.weeks?.[targetKey] || {
+      goalMemo: '',
+      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+      todoStickyNotes: '',
+    };
+
     onSavePlanner({
       ...planner,
       monthIndex: m,
+      days: targetRecord.days,
+      goalMemo: targetRecord.goalMemo || '',
+      todoStickyNotes: targetRecord.todoStickyNotes || '',
     });
   };
 
-  // Toggle Week Index (1-5)
+  // 切换周数 (1-5)
   const handleSelectWeek = (w: number) => {
     if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
+    const targetKey = getWeekKey(currentYear, currentMonth, w);
+    const targetRecord = planner.weeks?.[targetKey] || {
+      goalMemo: '',
+      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+      todoStickyNotes: '',
+    };
+
     onSavePlanner({
       ...planner,
       weekIndex: w,
+      days: targetRecord.days,
+      goalMemo: targetRecord.goalMemo || '',
+      todoStickyNotes: targetRecord.todoStickyNotes || '',
     });
   };
 
-  // Add Item to a specific Day
+  // 上一周导航 (跨月支持)
+  const handlePrevWeek = () => {
+    if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
+    let targetYear = currentYear;
+    let targetMonth = currentMonth;
+    let targetW = currentWeek - 1;
+
+    if (targetW < 1) {
+      targetW = 5;
+      targetMonth = currentMonth - 1;
+      if (targetMonth < 1) {
+        targetMonth = 12;
+        targetYear -= 1;
+      }
+    }
+
+    const targetKey = getWeekKey(targetYear, targetMonth, targetW);
+    const targetRecord = planner.weeks?.[targetKey] || {
+      goalMemo: '',
+      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+      todoStickyNotes: '',
+    };
+
+    onSavePlanner({
+      ...planner,
+      year: targetYear,
+      monthIndex: targetMonth,
+      weekIndex: targetW,
+      days: targetRecord.days,
+      goalMemo: targetRecord.goalMemo || '',
+      todoStickyNotes: targetRecord.todoStickyNotes || '',
+    });
+  };
+
+  // 下一周导航 (跨月支持)
+  const handleNextWeek = () => {
+    if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
+    let targetYear = currentYear;
+    let targetMonth = currentMonth;
+    let targetW = currentWeek + 1;
+
+    if (targetW > 5) {
+      targetW = 1;
+      targetMonth = currentMonth + 1;
+      if (targetMonth > 12) {
+        targetMonth = 1;
+        targetYear += 1;
+      }
+    }
+
+    const targetKey = getWeekKey(targetYear, targetMonth, targetW);
+    const targetRecord = planner.weeks?.[targetKey] || {
+      goalMemo: '',
+      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+      todoStickyNotes: '',
+    };
+
+    onSavePlanner({
+      ...planner,
+      year: targetYear,
+      monthIndex: targetMonth,
+      weekIndex: targetW,
+      days: targetRecord.days,
+      goalMemo: targetRecord.goalMemo || '',
+      todoStickyNotes: targetRecord.todoStickyNotes || '',
+    });
+  };
+
+  // 添加今日待办
   const handleAddTodo = (day: WeekdayKey) => {
     const text = (newTodoInputs[day] || '').trim();
     if (!text) return;
 
     if (audioEnabled) soundManager.playInteractionSound('brush', undefined, 'stroke');
 
-    const currentList = planner.days[day] || [];
     const newItem: WeeklyTodoItem = {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
       text,
       done: false,
     };
 
-    onSavePlanner({
-      ...planner,
-      days: {
-        ...planner.days,
-        [day]: [...currentList, newItem],
-      },
+    updateCurrentWeek((prev) => {
+      const list = prev.days[day] || [];
+      return {
+        ...prev,
+        days: {
+          ...prev.days,
+          [day]: [...list, newItem],
+        },
+      };
     });
 
     setNewTodoInputs((prev) => ({ ...prev, [day]: '' }));
   };
 
-  // Toggle Checkbox Item
+  // 勾选待办
   const handleToggleTodo = (day: WeekdayKey, id: string) => {
     if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'click');
 
-    const currentList = planner.days[day] || [];
-    const updated = currentList.map((item) =>
-      item.id === id ? { ...item, done: !item.done } : item
-    );
-
-    onSavePlanner({
-      ...planner,
-      days: {
-        ...planner.days,
-        [day]: updated,
-      },
+    updateCurrentWeek((prev) => {
+      const list = prev.days[day] || [];
+      return {
+        ...prev,
+        days: {
+          ...prev.days,
+          [day]: list.map((item) => (item.id === id ? { ...item, done: !item.done } : item)),
+        },
+      };
     });
   };
 
-  // Delete Item
+  // 删除待办
   const handleDeleteTodo = (day: WeekdayKey, id: string) => {
-    const currentList = planner.days[day] || [];
-    const updated = currentList.filter((item) => item.id !== id);
-
-    onSavePlanner({
-      ...planner,
-      days: {
-        ...planner.days,
-        [day]: updated,
-      },
+    updateCurrentWeek((prev) => {
+      const list = prev.days[day] || [];
+      return {
+        ...prev,
+        days: {
+          ...prev.days,
+          [day]: list.filter((item) => item.id !== id),
+        },
+      };
     });
   };
 
-  // Save Goal Memo Post-it
+  // 保存周度目标便签
   const handleSaveGoal = () => {
     setIsEditingGoal(false);
-    onSavePlanner({
-      ...planner,
+    updateCurrentWeek((prev) => ({
+      ...prev,
       goalMemo: goalText,
-    });
-    showToast('已更新每周寄语备考');
+    }));
+    showToast(`已保存 ${currentMonth}月第${currentWeek}周 目标寄语备考`);
   };
 
-  // Save Bottom-right TO DO sticky
+  // 保存右下角 TO DO 看板
   const handleSaveSticky = () => {
     setIsEditingSticky(false);
-    onSavePlanner({
-      ...planner,
+    updateCurrentWeek((prev) => ({
+      ...prev,
       todoStickyNotes: stickyText,
-    });
-    showToast('已更新重点 TO DO 待办看板');
+    }));
+    showToast(`已保存 ${currentMonth}月第${currentWeek}周 重点待办看板`);
+  };
+
+  // 一键复制上一周待办事项 (便利日常习惯，不改变历史上一周)
+  const handleCopyFromPreviousWeek = () => {
+    let prevYear = currentYear;
+    let prevMonth = currentMonth;
+    let prevW = currentWeek - 1;
+    if (prevW < 1) {
+      prevW = 5;
+      prevMonth = currentMonth - 1;
+      if (prevMonth < 1) {
+        prevMonth = 12;
+        prevYear -= 1;
+      }
+    }
+    const prevKey = getWeekKey(prevYear, prevMonth, prevW);
+    const prevRecord = planner.weeks?.[prevKey];
+
+    if (!prevRecord || !prevRecord.days || Object.values(prevRecord.days).every((list) => !list || list.length === 0)) {
+      showToast(`上一周 (${prevMonth}月第${prevW}周) 暂无已记录的待办事项可复制`, 'warning');
+      return;
+    }
+
+    // 克隆上一周的待办列表，但将完成状态重置为未完成
+    const clonedDays: { [key in WeekdayKey]?: WeeklyTodoItem[] } = {};
+    for (const day of ORDERED_WEEKDAYS) {
+      const prevList = prevRecord.days[day.key] || [];
+      clonedDays[day.key] = prevList.map((item) => ({
+        id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
+        text: item.text,
+        done: false,
+      }));
+    }
+
+    updateCurrentWeek((prev) => ({
+      ...prev,
+      days: clonedDays,
+      goalMemo: prev.goalMemo || prevRecord.goalMemo || '',
+      todoStickyNotes: prev.todoStickyNotes || prevRecord.todoStickyNotes || '',
+    }));
+
+    showToast(`已从上周 (${prevMonth}月第${prevW}周) 复制日常待办清单到本周！`, 'success');
+  };
+
+  // 一键清空本周计划
+  const handleClearCurrentWeek = () => {
+    if (!window.confirm(`确定要清空【${currentYear}年 ${currentMonth}月 第${currentWeek}周】的所有待办与便签吗？此操作不会影响其他周的记录。`)) {
+      return;
+    }
+
+    updateCurrentWeek(() => ({
+      goalMemo: '',
+      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+      todoStickyNotes: '',
+    }));
+    showToast(`已清空 ${currentMonth}月第${currentWeek}周 计划`);
   };
 
   return (
@@ -167,12 +435,15 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
             <h2 className="text-3xl sm:text-4xl font-extrabold font-serif tracking-tight text-[var(--header-red)]">
               Weekly Planner
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full bg-[var(--sakura-soft)] text-[var(--sakura-deep)] text-xs font-serif font-bold border border-[var(--sakura-pink)]">
-              周度手札 · 第 {planner.weekIndex || 1} 周
+            <span className="px-2.5 py-0.5 rounded-full bg-[var(--sakura-soft)] text-[var(--sakura-deep)] text-xs font-serif font-bold border border-[var(--sakura-pink)] shadow-2xs">
+              周度手札 · {currentMonth}月 第 {currentWeek} 周
+            </span>
+            <span className="text-[11px] font-mono text-[var(--text-muted)] bg-[var(--search-bg)] px-2 py-0.5 rounded border border-[var(--border-color)]">
+              键档: {currentWeekKey}
             </span>
           </div>
           <p className="text-xs text-[var(--text-muted)] font-serif mt-1">
-            纸面胶带手帐 · 记录主殿每周日常修习、出阵备忘与生活计划
+            纸面胶带手帐 · 每周独立归档保存，换周互不干扰 · 记录主殿日常修习与出阵计划
           </p>
         </div>
 
@@ -189,27 +460,19 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
           <div className="flex items-center border border-[var(--border-color)] rounded-lg bg-[var(--panel-color)] shadow-2xs overflow-hidden">
             <button
-              onClick={() => {
-                const currentW = planner.weekIndex || 1;
-                const nextW = currentW > 1 ? currentW - 1 : 5;
-                handleSelectWeek(nextW);
-              }}
+              onClick={handlePrevWeek}
               className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-color)] hover:bg-[var(--search-bg)] cursor-pointer transition-colors border-r border-[var(--border-color)]"
-              title="上一周"
+              title="上一周 (支持跨月)"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs font-serif font-bold text-[var(--text-color)] px-2.5 py-1">
-              {planner.year || 2026}年 · {planner.monthIndex || 10}月 第{planner.weekIndex || 1}周
+            <span className="text-xs font-serif font-bold text-[var(--text-color)] px-2.5 py-1 min-w-[130px] text-center">
+              {currentYear}年 · {currentMonth}月 第{currentWeek}周
             </span>
             <button
-              onClick={() => {
-                const currentW = planner.weekIndex || 1;
-                const nextW = currentW < 5 ? currentW + 1 : 1;
-                handleSelectWeek(nextW);
-              }}
+              onClick={handleNextWeek}
               className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-color)] hover:bg-[var(--search-bg)] cursor-pointer transition-colors border-l border-[var(--border-color)]"
-              title="下一周"
+              title="下一周 (支持跨月)"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -227,10 +490,10 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
           <div className="text-xs font-serif font-bold text-[var(--header-red)] mb-3 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4" />
-              <span>月份与周度打卡盘 (轻触数字手绘圆圈)</span>
+              <span>月份与周度打卡盘 (轻触数字独立切换)</span>
             </span>
             <span className="text-[10px] text-[var(--text-muted)] font-normal font-mono">
-              打卡记录：{planner.monthIndex}月 · 第{planner.weekIndex}周
+              当前手札：{currentMonth}月 · 第{currentWeek}周 (独立存录)
             </span>
           </div>
 
@@ -242,7 +505,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
               </div>
               <div className="grid grid-cols-6 flex-1">
                 {[1, 2, 3, 4, 5, 6].map((m) => {
-                  const isChecked = planner.monthIndex === m;
+                  const isChecked = currentMonth === m;
                   return (
                     <button
                       key={m}
@@ -268,7 +531,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
               </div>
               <div className="grid grid-cols-6 flex-1">
                 {[7, 8, 9, 10, 11, 12].map((m) => {
-                  const isChecked = planner.monthIndex === m;
+                  const isChecked = currentMonth === m;
                   return (
                     <button
                       key={m}
@@ -294,18 +557,26 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
               </div>
               <div className="grid grid-cols-5 flex-1">
                 {[1, 2, 3, 4, 5].map((w) => {
-                  const isChecked = planner.weekIndex === w;
+                  const isChecked = currentWeek === w;
+                  const recordedCount = getWeekRecordCount(currentYear, currentMonth, w);
+                  const hasEntries = recordedCount > 0;
+
                   return (
                     <button
                       key={w}
                       onClick={() => handleSelectWeek(w)}
-                      className="py-2 text-center border-r last:border-r-0 border-[var(--sakura-pink)] relative hover:bg-[var(--sakura-soft)] cursor-pointer transition-colors font-mono"
+                      className="py-2 text-center border-r last:border-r-0 border-[var(--sakura-pink)] relative hover:bg-[var(--sakura-soft)] cursor-pointer transition-colors font-mono group"
+                      title={`${currentMonth}月第${w}周 (${hasEntries ? `已存录 ${recordedCount} 条计划` : '暂无记录'})`}
                     >
                       <span className="text-[var(--text-color)]">{w}</span>
                       {isChecked && (
                         <span className="absolute inset-1 border-2 border-pink-500 rounded-full scale-90 -rotate-12 pointer-events-none opacity-90 shadow-xs flex items-center justify-center">
                           <span className="text-[9px] text-pink-600 font-bold select-none">★</span>
                         </span>
+                      )}
+                      {/* Recorded Entry Dot Indicator */}
+                      {hasEntries && !isChecked && (
+                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[var(--sakura-deep)] opacity-70" />
                       )}
                     </button>
                   );
@@ -342,11 +613,17 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
               <textarea
                 value={goalText}
                 onChange={(e) => setGoalText(e.target.value)}
-                placeholder="写下每周定好的目标，一周后确认是否达成。例如：计划每日必做事务、早睡早起、背单词、远征满勤..."
+                placeholder="写下本周定好的目标，一周后确认是否达成。例如：计划每日必做事务、早睡早起、背单词、远征满勤..."
                 rows={4}
                 className="w-full p-2.5 text-xs rounded-xl border border-[var(--sakura-pink)] bg-[var(--panel-color)] text-[var(--text-color)] focus:outline-hidden font-serif resize-none leading-relaxed"
               />
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setIsEditingGoal(false)}
+                  className="px-2.5 py-1 rounded-lg text-xs text-[var(--text-muted)] hover:text-[var(--text-color)] cursor-pointer"
+                >
+                  取消
+                </button>
                 <button
                   onClick={handleSaveGoal}
                   className="px-3 py-1 rounded-lg bg-[var(--sakura-deep)] text-white text-xs font-serif font-bold cursor-pointer"
@@ -357,9 +634,46 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
             </div>
           ) : (
             <p className="text-xs font-serif text-[var(--text-color)] leading-relaxed whitespace-pre-line min-h-[72px] opacity-90">
-              {planner.goalMemo ||
-                '每周定好目标，一周后确认是否达成。\n用 habit tracker 来提高做事效率，\n计划每日必做的事情。'}
+              {currentWeekRecord.goalMemo || (
+                <span className="italic text-[var(--text-muted)] opacity-70">
+                  「主殿，本周尚未题写目标。可点击右上角『编辑』记下本周生活与修习备考。」
+                </span>
+              )}
             </p>
+          )}
+        </div>
+      </div>
+
+      {/* Week Operation Bar (Copy routine tasks / Clean current week) */}
+      <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--search-bg)] border border-[var(--border-color)] text-xs font-serif flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-[var(--text-color)]">
+            【{currentYear}年 {currentMonth}月 · 第{currentWeek}周】待办手札
+          </span>
+          <span className="text-[11px] text-[var(--text-muted)]">
+            (共 {totalItemsInCurrentWeek} 项待办)
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopyFromPreviousWeek}
+            title="将上一周的例行待办清单复制到本周（自动重置为未完成状态）"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--panel-color)] border border-[var(--border-color)] text-[var(--sakura-deep)] hover:border-[var(--sakura-pink)] hover:bg-[var(--sakura-soft)] transition-colors cursor-pointer text-[11px] font-semibold"
+          >
+            <Copy className="w-3 h-3" />
+            <span>复制上周待办</span>
+          </button>
+
+          {totalItemsInCurrentWeek > 0 && (
+            <button
+              onClick={handleClearCurrentWeek}
+              title="仅清空本周的所有待办，其他周记录保持不变"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--panel-color)] border border-[var(--border-color)] text-gray-500 hover:text-red-500 hover:border-red-200 transition-colors cursor-pointer text-[11px]"
+            >
+              <Trash2 className="w-3 h-3" />
+              <span>清空本周</span>
+            </button>
           )}
         </div>
       </div>
@@ -421,7 +735,13 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                 rows={5}
                 className="w-full p-2.5 text-xs rounded-xl border border-[var(--sakura-pink)] bg-[var(--search-bg)] text-[var(--text-color)] focus:outline-hidden font-serif resize-none leading-relaxed"
               />
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setIsEditingSticky(false)}
+                  className="px-2.5 py-1 rounded-lg text-xs text-[var(--text-muted)] hover:text-[var(--text-color)] cursor-pointer"
+                >
+                  取消
+                </button>
                 <button
                   onClick={handleSaveSticky}
                   className="px-3 py-1 rounded-lg bg-[var(--sakura-deep)] text-white text-xs font-serif font-bold cursor-pointer"
@@ -432,8 +752,11 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
             </div>
           ) : (
             <div className="text-xs font-serif text-[var(--text-color)] leading-loose whitespace-pre-line min-h-[90px] font-semibold opacity-90 pl-1">
-              {planner.todoStickyNotes ||
-                '12.21  逛街买谷\n12.25  现世聚会\n12.27  连队战十万魂达成'}
+              {currentWeekRecord.todoStickyNotes || (
+                <span className="italic text-[var(--text-muted)] font-normal opacity-70">
+                  暂无重点待办。可点击右上角『编辑』写下本周日程。
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -443,7 +766,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
   // Helper renderer for each weekday card
   function renderDayCard(dayObj: { key: WeekdayKey; en: string; cn: string; short: string }) {
-    const list = planner.days[dayObj.key] || [];
+    const list = currentWeekRecord.days[dayObj.key] || [];
     const inputValue = newTodoInputs[dayObj.key] || '';
 
     return (

@@ -91,16 +91,28 @@ export interface WeeklyTodoItem {
 
 export type WeekdayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
+export interface SingleWeekRecord {
+  goalMemo?: string;
+  days: {
+    [key in WeekdayKey]?: WeeklyTodoItem[];
+  };
+  todoStickyNotes?: string;
+}
+
 export interface WeeklyPlannerData {
   id: string; // e.g. "2026-W42"
   year: number;
   monthIndex: number; // 1-12
   weekIndex: number; // 1-5
-  goalMemo: string; // 右上角便利贴寄语与习惯打卡 (Habit Tracker)
+  goalMemo: string; // 当前周便利贴寄语与习惯打卡 (兼容字段)
   days: {
     [key in WeekdayKey]?: WeeklyTodoItem[];
+  }; // 当前周待办清单 (兼容字段)
+  todoStickyNotes: string; // 当前周右下角手绘和纸板重要待办日程 (兼容字段)
+  // 按星期独立保存之多周记录字典，键名格式："${year}-M${monthIndex}-W${weekIndex}" (如: "2026-M10-W1")
+  weeks?: {
+    [weekKey: string]: SingleWeekRecord;
   };
-  todoStickyNotes: string; // 右下角手绘和纸板重要待办日程
 }
 
 export interface DaozhangRecord {

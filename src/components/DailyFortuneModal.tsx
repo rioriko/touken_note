@@ -1,5 +1,6 @@
-import React from 'react';
-import { DailyFortune } from '../dailyFortuneData';
+import React, { useMemo } from 'react';
+import { DailyFortune, isNeibanBlessed, isNeibanTaboo } from '../dailyFortuneData';
+import { NeibanRecord } from '../types';
 import {
   X,
   Sparkles,
@@ -8,12 +9,14 @@ import {
   AlertCircle,
   Quote,
   RefreshCw,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface DailyFortuneModalProps {
   isOpen: boolean;
   onClose: () => void;
   fortune: DailyFortune;
+  neibanRecords?: NeibanRecord[];
   onRefreshQuote?: () => void;
   honmaruName?: string;
 }
@@ -22,9 +25,31 @@ export const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({
   isOpen,
   onClose,
   fortune,
+  neibanRecords = [],
   onRefreshQuote,
   honmaruName = '大和',
 }) => {
+  // Match today's 宜 and 忌 with current planned Neiban records
+  const blessedNeibanItems = useMemo(() => {
+    if (!neibanRecords || neibanRecords.length === 0) return [];
+    return neibanRecords
+      .map((rec) => {
+        const check = isNeibanBlessed(rec.type, fortune.goodFor);
+        return check.isBlessed ? { record: rec, reason: check.matchedReason } : null;
+      })
+      .filter(Boolean) as { record: NeibanRecord; reason: string }[];
+  }, [neibanRecords, fortune.goodFor]);
+
+  const tabooNeibanItems = useMemo(() => {
+    if (!neibanRecords || neibanRecords.length === 0) return [];
+    return neibanRecords
+      .map((rec) => {
+        const check = isNeibanTaboo(rec.type, fortune.badFor);
+        return check.isTaboo ? { record: rec, reason: check.matchedReason } : null;
+      })
+      .filter(Boolean) as { record: NeibanRecord; reason: string }[];
+  }, [neibanRecords, fortune.badFor]);
+
   if (!isOpen) return null;
 
   return (
@@ -153,6 +178,52 @@ export const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* 神佑加持匹配与当番照应 (匹配 App.tsx 中 neibanRecords) */}
+          {(blessedNeibanItems.length > 0 || tabooNeibanItems.length > 0) && (
+            <div className="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/25 border border-amber-300/80 dark:border-amber-800/60 space-y-2 animate-fadeIn">
+              {blessedNeibanItems.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1 text-amber-800 dark:text-amber-300 font-bold font-serif text-xs mb-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                    <span>神佑加护内番 (与今日当值吉相相合)</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {blessedNeibanItems.map(({ record, reason }) => (
+                      <span
+                        key={record.id}
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white dark:bg-amber-900/40 border border-amber-300 text-amber-900 dark:text-amber-200 text-[11px] font-serif shadow-2xs"
+                      >
+                        <span className="font-bold">✨ 神佑</span>
+                        <span>{record.name} · {record.type}</span>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400">({reason})</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {tabooNeibanItems.length > 0 && (
+                <div className="pt-1.5 border-t border-amber-200/60 dark:border-amber-900/40">
+                  <div className="flex items-center gap-1 text-rose-700 dark:text-rose-400 font-bold font-serif text-xs mb-1">
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    <span>今日规诫提示 (请留意内番纪律)</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tabooNeibanItems.map(({ record, reason }) => (
+                      <span
+                        key={record.id}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white dark:bg-rose-900/30 border border-rose-300 text-rose-800 dark:text-rose-300 text-[10px] font-serif"
+                      >
+                        <span>⚠️ {record.name} · {record.type}</span>
+                        <span className="text-[9px] opacity-80">(忌: {reason})</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Character Quote Box */}
           <div className="p-4 rounded-xl bg-[var(--search-bg)] border-l-4 border-l-[var(--accent-gold)] border border-[var(--border-color)] relative">

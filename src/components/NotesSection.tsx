@@ -8,7 +8,13 @@ import {
   DaozhangRecord,
   ExpeditionRecord,
 } from '../types';
-import { SACRED_FORTUNE_LIST, SacredFortuneDefinition } from '../dailyFortuneData';
+import {
+  SACRED_FORTUNE_LIST,
+  SacredFortuneDefinition,
+  DailyFortune,
+  isNeibanBlessed,
+  isNeibanTaboo,
+} from '../dailyFortuneData';
 import { soundManager } from '../utils/soundManager';
 import { ExpeditionSection } from './ExpeditionSection';
 import {
@@ -40,6 +46,7 @@ interface NotesSectionProps {
   neibanRecords: NeibanRecord[];
   daozhangRecords?: DaozhangRecord[];
   expeditions?: ExpeditionRecord[];
+  dailyFortune?: DailyFortune;
   saniwaName?: string;
   honmaruName?: string;
   onOpenNote: (note: Note) => void;
@@ -60,6 +67,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   neibanRecords,
   daozhangRecords = [],
   expeditions = [],
+  dailyFortune,
   saniwaName = '主殿',
   honmaruName = '大和',
   onOpenNote,
@@ -519,6 +527,25 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
             </div>
           )}
 
+          {/* Today's Fortune & Blessing Banner */}
+          {dailyFortune && (
+            <div className="flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-amber-50/60 dark:bg-amber-950/25 border border-amber-300/80 dark:border-amber-800/60 text-xs font-serif shadow-2xs flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Sparkles className="w-4 h-4 text-amber-500 animate-pulse shrink-0" />
+                <span className="font-bold text-amber-900 dark:text-amber-200">
+                  今日吉相签运【{dailyFortune.luckLevel} · {dailyFortune.symbol}】：
+                </span>
+                <span className="text-emerald-800 dark:text-emerald-300 font-medium">
+                  宜：{dailyFortune.goodFor.join('、')}
+                </span>
+              </div>
+              <div className="text-[11px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                <span>与今日「宜」相符之当番尊享「神佑」吉相加护</span>
+              </div>
+            </div>
+          )}
+
           {/* Quick Add Form */}
           <form
             onSubmit={handleCreateNeiban}
@@ -669,6 +696,8 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
                   displayedNeibanRecords.map((rec) => {
                     const prog = typeof rec.progress === 'number' ? rec.progress : rec.done ? 100 : 0;
                     const isEscaped = rec.status === 'escaped' || !!rec.escapeReason;
+                    const blessCheck = isNeibanBlessed(rec.type, dailyFortune?.goodFor || []);
+                    const tabooCheck = isNeibanTaboo(rec.type, dailyFortune?.badFor || []);
 
                     return (
                       <tr key={rec.id} className="hover:bg-[var(--search-bg)]/40 transition-colors">
@@ -676,9 +705,29 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
                           {rec.date}
                         </td>
                         <td className="py-2 px-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${getTagColorClass(rec.type)}`}>
-                            {rec.type}
-                          </span>
+                          <div className="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${getTagColorClass(rec.type)}`}>
+                              {rec.type}
+                            </span>
+                            {/* 醒目的“神佑”图标提示 (若当前计划的内番项目属于‘宜’) */}
+                            {blessCheck.isBlessed && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-linear-to-r from-amber-400 to-amber-500 text-amber-950 font-serif font-black text-[10px] shadow-xs border border-amber-300 animate-pulse select-none cursor-help"
+                                title={`【吉相神佑】今日宜：${blessCheck.matchedReason}，当番大吉！`}
+                              >
+                                <Sparkles className="w-2.5 h-2.5 fill-amber-950 text-amber-950" />
+                                <span>神佑</span>
+                              </span>
+                            )}
+                            {tabooCheck.isTaboo && (
+                              <span
+                                className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 text-[9px] font-serif border border-rose-200 cursor-help"
+                                title={`【今日规诫】今日忌：${tabooCheck.matchedReason}`}
+                              >
+                                <span>戒</span>
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2 px-3 font-bold font-serif text-[var(--text-color)]">
                           {rec.name}

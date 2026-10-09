@@ -204,6 +204,17 @@ export default function App() {
       if (savedPlanner) {
         try {
           const parsedPlanner = JSON.parse(savedPlanner);
+          // 确保按周独立保存的 weeks 结构健全，并将根层级历史数据平滑迁入当前周
+          if (!parsedPlanner.weeks || typeof parsedPlanner.weeks !== 'object') {
+            const currentKey = `${parsedPlanner.year || 2026}-M${parsedPlanner.monthIndex || 10}-W${parsedPlanner.weekIndex || 1}`;
+            parsedPlanner.weeks = {
+              [currentKey]: {
+                goalMemo: parsedPlanner.goalMemo || '',
+                days: parsedPlanner.days || {},
+                todoStickyNotes: parsedPlanner.todoStickyNotes || '',
+              },
+            };
+          }
           setWeeklyPlanner(parsedPlanner);
         } catch {
           setWeeklyPlanner(INITIAL_WEEKLY_PLANNER);
@@ -763,6 +774,7 @@ export default function App() {
             neibanRecords={neibanRecords}
             daozhangRecords={daozhangRecords}
             expeditions={expeditions}
+            dailyFortune={dailyFortune}
             honmaruName={config.honmaruName || '大和'}
             saniwaName={config.saniwaName || '主殿'}
             onOpenNote={handleOpenNoteForEdit}
@@ -883,6 +895,7 @@ export default function App() {
         isOpen={isFortuneModalOpen}
         onClose={() => setIsFortuneModalOpen(false)}
         fortune={dailyFortune}
+        neibanRecords={neibanRecords}
         onRefreshQuote={handleRefreshFortune}
         honmaruName={config.honmaruName || '大和'}
       />
