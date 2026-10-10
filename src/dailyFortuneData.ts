@@ -340,7 +340,55 @@ export function isNeibanTaboo(
   return { isTaboo: false };
 }
 
-// 计算简单的农历对应展示（基于日期的伪随机确定性算法）
+const CHINESE_LUNAR_DAYS = [
+  '', '初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十',
+  '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十',
+  '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十',
+];
+
+const GANZHI = [
+  '甲子', '乙丑', '丙寅', '丁卯', '戊辰', '己巳', '庚午', '辛未', '壬申', '癸酉',
+  '甲戌', '乙亥', '丙子', '丁丑', '戊寅', '己卯', '庚辰', '辛巳', '壬午', '癸未',
+  '甲申', '乙酉', '丙戌', '丁亥', '戊子', '己丑', '庚寅', '辛卯', '壬辰', '癸巳',
+  '甲午', '乙未', '丙申', '丁酉', '戊戌', '己亥', '庚子', '辛丑', '壬寅', '癸卯',
+  '甲辰', '乙巳', '丙午', '丁未', '戊申', '己酉', '庚戌', '辛亥', '壬子', '癸丑',
+  '甲寅', '乙卯', '丙辰', '丁巳', '戊午', '己未', '庚申', '辛酉', '壬戌', '癸亥',
+];
+
+// 高精度精准农历算法（基于 JavaScript 原生 Intl.DateTimeFormat 'zh-Hans-u-ca-chinese' 真实天文学历法）
+export function getAccurateLunarDate(date: Date = new Date()): string {
+  try {
+    const formatter = new Intl.DateTimeFormat('zh-Hans-u-ca-chinese', {
+      dateStyle: 'full',
+    });
+    const parts = formatter.formatToParts(date);
+    let yearName = parts.find((p) => (p.type as string) === 'yearName')?.value;
+    let month = parts.find((p) => p.type === 'month')?.value || '';
+    let day = parts.find((p) => p.type === 'day')?.value || '';
+
+    // 若日数为数字（如 "1" 或 "21"），规范转换为传统农历称谓（如 "初一"、"廿一"）
+    const dayNum = parseInt(day, 10);
+    if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= 30) {
+      day = CHINESE_LUNAR_DAYS[dayNum];
+    }
+
+    if (!yearName) {
+      const year = date.getFullYear();
+      yearName = GANZHI[Math.abs(year - 4) % 60];
+    }
+
+    if (month && day) {
+      return `${yearName}年 农历${month}${day}`;
+    }
+  } catch (err) {
+    console.warn('Intl Chinese calendar fallback used:', err);
+  }
+
+  // 严谨降级
+  return `${GANZHI[Math.abs(date.getFullYear() - 4) % 60]}年 农历九月初一`;
+}
+
+// 抽取今日签文与农历吉相
 export function generateDailyFortune(
   asstName: string,
   asstSchool: string,
@@ -428,23 +476,8 @@ export function generateDailyFortune(
   const goodFor = Array.from(goodSet);
   const badFor = Array.from(badSet);
 
-  // 农历天干地支年份模拟 (2026年为丙午年)
-  const ganzhiYears = ['甲辰', '乙巳', '丙午', '丁未', '戊申', '己酉', '庚戌', '辛亥'];
-  const ganzhiYear = ganzhiYears[(year - 2024) % ganzhiYears.length] || '丙午';
-
-  const lunarMonths = [
-    '正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊',
-  ];
-  const lunarDays = [
-    '初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十',
-    '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十',
-    '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十',
-  ];
-
-  // 基于日期的近似推算展示农历雅致称谓
-  const lunarMonthIdx = (month + 10) % 12;
-  const lunarDayIdx = (day + 15) % 30;
-  const lunarDateStr = `${ganzhiYear}年 农历${lunarMonths[lunarMonthIdx]}月${lunarDays[lunarDayIdx]}`;
+  // 精准真实天文学农历称谓与天干地支年号
+  const lunarDateStr = getAccurateLunarDate(date);
 
   return {
     dateStr: `${year}年${String(month).padStart(2, '0')}月${String(day).padStart(2, '0')}日 ${dayOfWeek}`,

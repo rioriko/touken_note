@@ -6,16 +6,25 @@ export interface VersionRelease {
   highlights: string[];
 }
 
-export const APP_VERSION = 'v1.4.4';
+export const APP_VERSION = 'v1.4.5';
 export const APP_FULL_TITLE = '本丸手札 - 审神者专用手帐工具';
 export const APP_DEFAULT_ABOUT = '本丸手札\n审神者专用手帐工具 | 于现代记录';
 
 export const CHANGELOG_HISTORY: VersionRelease[] = [
   {
+    version: 'v1.4.5',
+    title: '精准农历历法校准与干支年号天文学对齐',
+    date: '2026年10月',
+    badge: '当前版本',
+    highlights: [
+      '🏮 高精度真实农历历法校准：全面重构每日签文与晨鉴中的农历推演算法，采用标准天文学历法体系，精准对齐真实农历月日与干支年号（例如 2026年10月10日 精准展现为【丙午年 农历九月初一】）。',
+      '📜 年号天干地支与闰月严谨对应：自动匹配如丙午年、乙巳年等六十甲子干支年号，支持朔望初一到三十及传统节庆日期精准流转。',
+    ],
+  },
+  {
     version: 'v1.4.4',
     title: '周度手札按周独立归档、换周互不干扰与跨周待办流转',
     date: '2026年10月',
-    badge: '当前版本',
     highlights: [
       '📅 周度手札按周独立存录：重构 Weekly Planner 底层数据归档模型，按“年-月-周”严格独立键档保存（如 2026-M10-W1, 2026-M10-W2 等）。切换第2周或第3周并编辑内容，第一周及其他各周记录完全独立保留，绝不相互影响与覆盖。',
       '🏷️ 周度存录小圆点标记：在月份与周度打卡盘上为已存录计划的周数动态标注提示圆点，一目了然看清哪一周已有手札安排。',
