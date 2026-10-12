@@ -39,6 +39,26 @@ export function getWeekKey(year: number, monthIndex: number, weekIndex: number):
   return `${year}-M${monthIndex}-W${weekIndex}`;
 }
 
+export const createEmptyWeekRecord = (): SingleWeekRecord => ({
+  goalMemo: '',
+  days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
+  todoStickyNotes: '',
+});
+
+export const cloneWeekRecord = (rec?: Partial<SingleWeekRecord>): SingleWeekRecord => {
+  const dayKeys: WeekdayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const clonedDays: { [key in WeekdayKey]?: WeeklyTodoItem[] } = {};
+  for (const k of dayKeys) {
+    const list = rec?.days?.[k];
+    clonedDays[k] = Array.isArray(list) ? list.map((item) => ({ ...item })) : [];
+  }
+  return {
+    goalMemo: rec?.goalMemo || '',
+    days: clonedDays,
+    todoStickyNotes: rec?.todoStickyNotes || '',
+  };
+};
+
 export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   planner,
   onSavePlanner,
@@ -53,12 +73,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   // 从按周独立存储的 weeks 字典中读取当前周的数据
   const currentWeekRecord: SingleWeekRecord = useMemo(() => {
     if (planner.weeks && planner.weeks[currentWeekKey]) {
-      const rec = planner.weeks[currentWeekKey];
-      return {
-        goalMemo: rec.goalMemo ?? '',
-        days: rec.days ?? { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-        todoStickyNotes: rec.todoStickyNotes ?? '',
-      };
+      return cloneWeekRecord(planner.weeks[currentWeekKey]);
     }
     // 兼容初始或旧数据根层级字段
     if (
@@ -68,18 +83,14 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
       planner.monthIndex === currentMonth &&
       planner.weekIndex === currentWeek
     ) {
-      return {
-        goalMemo: planner.goalMemo ?? '',
-        days: planner.days ?? { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-        todoStickyNotes: planner.todoStickyNotes ?? '',
-      };
+      return cloneWeekRecord({
+        goalMemo: planner.goalMemo,
+        days: planner.days,
+        todoStickyNotes: planner.todoStickyNotes,
+      });
     }
     // 全新空白周
-    return {
-      goalMemo: '',
-      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-      todoStickyNotes: '',
-    };
+    return createEmptyWeekRecord();
   }, [
     planner.weeks,
     currentWeekKey,
@@ -109,9 +120,30 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
     setNewTodoInputs({});
   }, [currentWeekKey]);
 
-  // 更新当前周数据的高阶函数，严格保证仅修改 weeks[currentWeekKey]
+  // 自愈校验：确保当前周的记录安全存在于 planner.weeks 字典中
+  useEffect(() => {
+    if (!planner.weeks || !planner.weeks[currentWeekKey]) {
+      const initialRecord = cloneWeekRecord(currentWeekRecord);
+      const updatedWeeks = {
+        ...(planner.weeks || {}),
+        [currentWeekKey]: initialRecord,
+      };
+      onSavePlanner({
+        ...planner,
+        year: currentYear,
+        monthIndex: currentMonth,
+        weekIndex: currentWeek,
+        days: initialRecord.days,
+        goalMemo: initialRecord.goalMemo || '',
+        todoStickyNotes: initialRecord.todoStickyNotes || '',
+        weeks: updatedWeeks,
+      });
+    }
+  }, [currentWeekKey, planner.weeks]);
+
+  // 更新当前周数据的高阶函数，严格保证仅修改 weeks[currentWeekKey] 且深拷贝
   const updateCurrentWeek = (updater: (prev: SingleWeekRecord) => SingleWeekRecord) => {
-    const updatedRecord = updater(currentWeekRecord);
+    const updatedRecord = cloneWeekRecord(updater(currentWeekRecord));
     const updatedWeeks = {
       ...(planner.weeks || {}),
       [currentWeekKey]: updatedRecord,
@@ -126,6 +158,50 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
       goalMemo: updatedRecord.goalMemo || '',
       todoStickyNotes: updatedRecord.todoStickyNotes || '',
       weeks: updatedWeeks,
+    });
+  };
+
+  // 核心周切换调度函数：在跨周/跨月前，确保当前周未提交或编辑中的草稿安全落盘，再载入目标周独立归档
+  const navigateToWeek = (targetYear: number, targetMonth: number, targetWeek: number) => {
+    if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
+
+    // 1. 将当前周（源周）可能正在编辑的文本与待办立即固化到最新 Record 中，绝对不丢失
+    const sourceRecord: SingleWeekRecord = cloneWeekRecord({
+      goalMemo: isEditingGoal ? goalText : (currentWeekRecord.goalMemo || ''),
+      days: currentWeekRecord.days,
+      todoStickyNotes: isEditingSticky ? stickyText : (currentWeekRecord.todoStickyNotes || ''),
+    });
+
+    // 2. 目标周键名
+    const targetKey = getWeekKey(targetYear, targetMonth, targetWeek);
+
+    // 3. 构建新的 weeks 字典，源周绝对落盘保存
+    const nextWeeks: { [key: string]: SingleWeekRecord } = {
+      ...(planner.weeks || {}),
+      [currentWeekKey]: sourceRecord,
+    };
+
+    // 4. 提取或初始化目标周数据
+    if (!nextWeeks[targetKey]) {
+      nextWeeks[targetKey] = createEmptyWeekRecord();
+    }
+    const targetRecord = cloneWeekRecord(nextWeeks[targetKey]);
+
+    // 5. 重置编辑态与即时输入
+    setIsEditingGoal(false);
+    setIsEditingSticky(false);
+    setNewTodoInputs({});
+
+    // 6. 原子化保存与切换
+    onSavePlanner({
+      ...planner,
+      year: targetYear,
+      monthIndex: targetMonth,
+      weekIndex: targetWeek,
+      days: targetRecord.days,
+      goalMemo: targetRecord.goalMemo || '',
+      todoStickyNotes: targetRecord.todoStickyNotes || '',
+      weeks: nextWeeks,
     });
   };
 
@@ -165,69 +241,22 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
     const currentM = now.getMonth() + 1; // 1-12
     const date = now.getDate();
     const currentW = Math.min(5, Math.max(1, Math.ceil(date / 7)));
-
-    if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
-
-    const targetKey = getWeekKey(now.getFullYear(), currentM, currentW);
-    const targetRecord = planner.weeks?.[targetKey] || {
-      goalMemo: '',
-      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-      todoStickyNotes: '',
-    };
-
-    onSavePlanner({
-      ...planner,
-      year: now.getFullYear(),
-      monthIndex: currentM,
-      weekIndex: currentW,
-      days: targetRecord.days,
-      goalMemo: targetRecord.goalMemo || '',
-      todoStickyNotes: targetRecord.todoStickyNotes || '',
-    });
+    navigateToWeek(now.getFullYear(), currentM, currentW);
     showToast(`已对齐现世时间：${now.getFullYear()}年 ${currentM}月 · 第${currentW}周`);
   };
 
   // 切换月份 (1-12)
   const handleSelectMonth = (m: number) => {
-    if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
-    const targetKey = getWeekKey(currentYear, m, currentWeek);
-    const targetRecord = planner.weeks?.[targetKey] || {
-      goalMemo: '',
-      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-      todoStickyNotes: '',
-    };
-
-    onSavePlanner({
-      ...planner,
-      monthIndex: m,
-      days: targetRecord.days,
-      goalMemo: targetRecord.goalMemo || '',
-      todoStickyNotes: targetRecord.todoStickyNotes || '',
-    });
+    navigateToWeek(currentYear, m, currentWeek);
   };
 
   // 切换周数 (1-5)
   const handleSelectWeek = (w: number) => {
-    if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
-    const targetKey = getWeekKey(currentYear, currentMonth, w);
-    const targetRecord = planner.weeks?.[targetKey] || {
-      goalMemo: '',
-      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-      todoStickyNotes: '',
-    };
-
-    onSavePlanner({
-      ...planner,
-      weekIndex: w,
-      days: targetRecord.days,
-      goalMemo: targetRecord.goalMemo || '',
-      todoStickyNotes: targetRecord.todoStickyNotes || '',
-    });
+    navigateToWeek(currentYear, currentMonth, w);
   };
 
   // 上一周导航 (跨月支持)
   const handlePrevWeek = () => {
-    if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
     let targetYear = currentYear;
     let targetMonth = currentMonth;
     let targetW = currentWeek - 1;
@@ -241,27 +270,11 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
       }
     }
 
-    const targetKey = getWeekKey(targetYear, targetMonth, targetW);
-    const targetRecord = planner.weeks?.[targetKey] || {
-      goalMemo: '',
-      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-      todoStickyNotes: '',
-    };
-
-    onSavePlanner({
-      ...planner,
-      year: targetYear,
-      monthIndex: targetMonth,
-      weekIndex: targetW,
-      days: targetRecord.days,
-      goalMemo: targetRecord.goalMemo || '',
-      todoStickyNotes: targetRecord.todoStickyNotes || '',
-    });
+    navigateToWeek(targetYear, targetMonth, targetW);
   };
 
   // 下一周导航 (跨月支持)
   const handleNextWeek = () => {
-    if (audioEnabled) soundManager.playInteractionSound('paper', undefined, 'flip');
     let targetYear = currentYear;
     let targetMonth = currentMonth;
     let targetW = currentWeek + 1;
@@ -275,22 +288,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
       }
     }
 
-    const targetKey = getWeekKey(targetYear, targetMonth, targetW);
-    const targetRecord = planner.weeks?.[targetKey] || {
-      goalMemo: '',
-      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-      todoStickyNotes: '',
-    };
-
-    onSavePlanner({
-      ...planner,
-      year: targetYear,
-      monthIndex: targetMonth,
-      weekIndex: targetW,
-      days: targetRecord.days,
-      goalMemo: targetRecord.goalMemo || '',
-      todoStickyNotes: targetRecord.todoStickyNotes || '',
-    });
+    navigateToWeek(targetYear, targetMonth, targetW);
   };
 
   // 添加今日待办
@@ -418,11 +416,11 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
       return;
     }
 
-    updateCurrentWeek(() => ({
-      goalMemo: '',
-      days: { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] },
-      todoStickyNotes: '',
-    }));
+    updateCurrentWeek(() => createEmptyWeekRecord());
+    setGoalText('');
+    setStickyText('');
+    setIsEditingGoal(false);
+    setIsEditingSticky(false);
     showToast(`已清空 ${currentMonth}月第${currentWeek}周 计划`);
   };
 

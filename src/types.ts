@@ -125,6 +125,7 @@ export interface DaozhangRecord {
   notes: string; // 源起 / 逸事考录
   favorite?: boolean;
   bondLevel?: number; // 羁绊值 (1-5 颗星，默认 1)
+  level?: number | string; // 刀剑修习等级 (如 1-99，或 "极 35"，默认 1)
   memoEntries?: DaozhangMemoEntry[]; // 互动小记、刀装问答签文备忘录
 }
 

@@ -6,11 +6,22 @@ export interface VersionRelease {
   highlights: string[];
 }
 
-export const APP_VERSION = 'v1.4.5';
+export const APP_VERSION = 'v1.4.6';
 export const APP_FULL_TITLE = '本丸手札 - 审神者专用手帐工具';
 export const APP_DEFAULT_ABOUT = '本丸手札\n审神者专用手帐工具 | 于现代记录';
 
 export const CHANGELOG_HISTORY: VersionRelease[] = [
+  {
+    version: 'v1.4.6',
+    title: '刀账典籍修习等级自定义输入与双核对称优雅排布',
+    date: '2026年10月',
+    badge: '当前版本',
+    highlights: [
+      '🗡️ 刀剑男士修习等级自定义输入：在刀账典籍详情中新增快捷自定义等级输入功能，出阵升级后可随时直接修改等级数字或输入自定义称号（如 99、极35 等），回车或点击空白处即时保存，无需繁琐进入大表单。',
+      '⚖️ 左侧主仆羁绊 + 右侧修习等级对称胶囊：主仆羁绊（1~5星交互）居左，修习等级（带Lv.徽记、输入框与 +/- 步进小按钮）居右，字号与「显现本丸」完全保持一致（text-xs 12px），整体优雅平衡、温润不喧宾夺主。',
+      '📱 宽窄屏自适应响应式：在手机等窄屏设备下自动柔和换行居中居中排列，兼顾操作便利度与视觉美感。',
+    ],
+  },
   {
     version: 'v1.4.5',
     title: '精准农历历法校准与干支年号天文学对齐',

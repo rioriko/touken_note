@@ -119,6 +119,7 @@ export default function App() {
         notes: r.notes || '',
         favorite: !!r.favorite,
         bondLevel: typeof r.bondLevel === 'number' ? Math.max(1, Math.min(5, r.bondLevel)) : 1,
+        level: r.level !== undefined ? r.level : 1,
         memoEntries: Array.isArray(r.memoEntries) ? r.memoEntries : [],
       };
     });

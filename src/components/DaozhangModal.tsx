@@ -28,6 +28,7 @@ import {
   Clock,
   Cake,
   Heart,
+  Shield,
   MessageSquare,
   StickyNote,
   Send,
@@ -53,7 +54,7 @@ interface DaozhangModalProps {
 
 type DaozhangView = 'index' | 'form' | 'detail' | 'treasure';
 type ViewMode = 'grid' | 'list' | 'timeline';
-type SortOrder = 'date-desc' | 'date-asc' | 'number-asc' | 'number-desc';
+type SortOrder = 'date-desc' | 'date-asc' | 'number-asc' | 'number-desc' | 'level-desc' | 'level-asc' | 'bond-desc';
 
 // Helper to compute anniversary / days manifested in Honmaru
 const getManifestationInfo = (dateStr: string) => {
@@ -111,6 +112,11 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
   const [formNotes, setFormNotes] = useState<string>('');
   const [formFavorite, setFormFavorite] = useState<boolean>(false);
   const [formBondLevel, setFormBondLevel] = useState<number>(1);
+  const [formLevel, setFormLevel] = useState<number | string>(1);
+
+  // Inline level editing on detail view
+  const [isEditingLevelInline, setIsEditingLevelInline] = useState(false);
+  const [inlineLevelInput, setInlineLevelInput] = useState<string>('1');
 
   // In-app Custom Confirm Dialog to avoid browser window.confirm being blocked
   const [recordPendingDelete, setRecordPendingDelete] = useState<DaozhangRecord | null>(null);
@@ -140,6 +146,46 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
     };
     onSaveRecord(updated, false);
     showToast(`【${record.name}】羁绊值升至 ${clamped} 星！心犀相通`);
+  };
+
+  // Quick Level update handler
+  const handleUpdateLevel = (record: DaozhangRecord, newLevel: number | string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const updated: DaozhangRecord = {
+      ...record,
+      level: newLevel,
+    };
+    onSaveRecord(updated, false);
+    setInlineLevelInput(String(newLevel).replace(/^Lv\.\s*/i, ''));
+    showToast(`【${record.name}】修习等级已更新为 Lv.${newLevel}`);
+  };
+
+  // Quick +1 / -1 Level Stepper
+  const handleStepLevel = (record: DaozhangRecord, delta: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const raw = String(record.level !== undefined ? record.level : 1).replace(/^Lv\.\s*/i, '');
+    const currentNum = parseInt(raw, 10);
+    const nextNum = isNaN(currentNum) ? 1 : Math.max(1, Math.min(99, currentNum + delta));
+    setInlineLevelInput(String(nextNum));
+    handleUpdateLevel(record, nextNum);
+  };
+
+  // Save inline custom level input on detail view
+  const handleSaveInlineLevel = (record: DaozhangRecord) => {
+    setIsEditingLevelInline(false);
+    const trimmed = inlineLevelInput.trim();
+    if (!trimmed) {
+      setInlineLevelInput(String(record.level !== undefined ? record.level : 1).replace(/^Lv\.\s*/i, ''));
+      return;
+    }
+    const num = parseInt(trimmed.replace(/^Lv\.\s*/i, ''), 10);
+    const finalLevel = !isNaN(num) && /^\d+$/.test(trimmed.replace(/^Lv\.\s*/i, ''))
+      ? Math.max(1, Math.min(99, num))
+      : trimmed;
+    setInlineLevelInput(String(finalLevel).replace(/^Lv\.\s*/i, ''));
+    if (finalLevel !== record.level) {
+      handleUpdateLevel(record, finalLevel);
+    }
   };
 
   // Add or update memo entry to current record
@@ -255,6 +301,17 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
         if (sortOrder === 'date-asc') {
           return (a.date || '').localeCompare(b.date || '');
         }
+        if (sortOrder === 'level-desc') {
+          const getL = (r: DaozhangRecord) => parseInt(String(r.level !== undefined ? r.level : 1).replace(/\D/g, ''), 10) || 1;
+          return getL(b) - getL(a);
+        }
+        if (sortOrder === 'level-asc') {
+          const getL = (r: DaozhangRecord) => parseInt(String(r.level !== undefined ? r.level : 1).replace(/\D/g, ''), 10) || 1;
+          return getL(a) - getL(b);
+        }
+        if (sortOrder === 'bond-desc') {
+          return (b.bondLevel || 1) - (a.bondLevel || 1);
+        }
         return 0;
       });
   }, [records, searchTerm, selectedSwordType, selectedSchool, sortOrder]);
@@ -289,6 +346,8 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
     setFormDate(new Date().toISOString().split('T')[0]);
     setFormNotes('');
     setFormFavorite(false);
+    setFormBondLevel(1);
+    setFormLevel(1);
     setCurrentView('form');
   };
 
@@ -303,6 +362,7 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
     setFormNotes(record.notes || '');
     setFormFavorite(!!record.favorite);
     setFormBondLevel(record.bondLevel || 1);
+    setFormLevel(record.level !== undefined ? record.level : 1);
     setCurrentView('form');
   };
 
@@ -313,6 +373,8 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
     setIsEditingNotesInline(false);
     setIsAddingMemo(false);
     setMemoContent('');
+    setIsEditingLevelInline(false);
+    setInlineLevelInput(String(record.level !== undefined ? record.level : 1).replace(/^Lv\.\s*/i, ''));
     setCurrentView('detail');
   };
 
@@ -334,6 +396,11 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
 
     const existing = records.find((r) => r.id === formId);
     const isNew = !existing;
+    const numLevel = parseInt(String(formLevel).replace(/^Lv\.\s*/i, ''), 10);
+    const parsedLevel = !isNaN(numLevel) && /^\d+$/.test(String(formLevel).trim().replace(/^Lv\.\s*/i, ''))
+      ? Math.max(1, Math.min(99, numLevel))
+      : String(formLevel).trim() || 1;
+
     const newRecord: DaozhangRecord = {
       id: formId,
       number: formattedNum,
@@ -344,12 +411,14 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
       notes: formNotes.trim(),
       favorite: formFavorite,
       bondLevel: formBondLevel,
+      level: parsedLevel,
       memoEntries: existing?.memoEntries || [],
     };
 
     onSaveRecord(newRecord, isNew);
     setSelectedRecordId(formId);
     setInlineNotesContent(newRecord.notes);
+    setInlineLevelInput(String(newRecord.level !== undefined ? newRecord.level : 1).replace(/^Lv\.\s*/i, ''));
     setCurrentView('detail');
     showToast(isNew ? `新刃【${newRecord.name}】已录入刀账` : `【${newRecord.name}】刀账档案已更新`);
   };
@@ -502,6 +571,9 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                   >
                     <option value="date-desc">显现时序：最新显现在前 (时间轴)</option>
                     <option value="date-asc">显现时序：开荒初始在前 (从早到晚)</option>
+                    <option value="level-desc">修习等级：高等级在前 (Lv.99→)</option>
+                    <option value="level-asc">修习等级：初入修习在前 (Lv.1→)</option>
+                    <option value="bond-desc">羁绊评级：从高到低 (5星→1星)</option>
                     <option value="number-asc">刀剑番号：从小到大 (No.1→)</option>
                     <option value="number-desc">刀剑番号：从大到小</option>
                   </select>
@@ -653,7 +725,7 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                           </div>
                         </div>
 
-                        {/* Middle: 刀种 & 流派 */}
+                        {/* Middle: 刀种 & 流派 & 等级 */}
                         <div className="flex flex-wrap items-center justify-center gap-1 my-1">
                           <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-[var(--search-bg)] text-[var(--text-color)] border border-[var(--border-color)]">
                             {dz.swordType || '打刀'}
@@ -663,6 +735,12 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                               {dz.school}
                             </span>
                           )}
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-sm font-mono font-bold bg-[var(--search-bg)] text-[var(--header-red)] border border-[var(--sakura-pink)]/60"
+                            title={`当前修习等级: Lv.${dz.level !== undefined ? dz.level : 1}`}
+                          >
+                            Lv.{dz.level !== undefined ? dz.level : 1}
+                          </span>
                         </div>
 
                         {/* Bond Level (1-5 Stars Quick Click) */}
@@ -717,6 +795,7 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                         <th className="py-2.5 px-3 font-semibold">刀剑名讳</th>
                         <th className="py-2.5 px-3 font-semibold w-20">刀种</th>
                         <th className="py-2.5 px-3 font-semibold w-20">流派</th>
+                        <th className="py-2.5 px-3 font-semibold w-16">等级</th>
                         <th className="py-2.5 px-3 font-semibold w-24">羁绊值</th>
                         <th className="py-2.5 px-3 font-semibold w-36">显现纪念时日</th>
                         <th className="py-2.5 px-3 font-semibold hidden md:table-cell">逸事摘记</th>
@@ -762,6 +841,14 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                               ) : (
                                 <span className="text-gray-400">-</span>
                               )}
+                            </td>
+                            <td className="py-2 px-3">
+                              <span
+                                className="px-1.5 py-0.5 rounded font-mono font-bold text-xs bg-[var(--search-bg)] text-[var(--header-red)] border border-[var(--sakura-pink)]/40"
+                                title={`修习等级: Lv.${dz.level !== undefined ? dz.level : 1}`}
+                              >
+                                Lv.{dz.level !== undefined ? dz.level : 1}
+                              </span>
                             </td>
                             <td className="py-2 px-3">
                               <div
@@ -1037,8 +1124,8 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
               </div>
             </div>
 
-            {/* Row 3: 显现/收入日期 & 羁绊评级 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Row 3: 显现/收入日期 & 羁绊评级 & 修习等级 */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-color)] mb-1">
                   显现 / 收入日期
@@ -1080,7 +1167,53 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                   </span>
                 </div>
                 <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                  亦可在刀账卡片或长卷目录中点击星标快速调整
+                  可随时在卡片或详情页点击星标调整
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text-color)] mb-1 flex items-center justify-between">
+                  <span>修习等级 (Lv)</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono">如 1~99</span>
+                </label>
+                <div className="flex items-center gap-1">
+                  <div className="relative flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-[var(--sakura-deep)]">
+                      Lv.
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="1"
+                      value={String(formLevel).replace(/^Lv\.\s*/i, '')}
+                      onChange={(e) => setFormLevel(e.target.value)}
+                      className="w-full pl-8 pr-2 py-2 text-xs rounded-lg border border-[var(--border-color)] bg-[var(--search-bg)] text-[var(--text-color)] focus:outline-hidden focus:border-[var(--sakura-deep)] font-mono font-bold"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const num = parseInt(String(formLevel).replace(/\D/g, ''), 10) || 1;
+                      setFormLevel(Math.max(1, num - 1));
+                    }}
+                    className="px-2 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--search-bg)] hover:bg-[var(--sakura-soft)] text-xs font-mono cursor-pointer"
+                    title="等级 -1"
+                  >
+                    -
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const num = parseInt(String(formLevel).replace(/\D/g, ''), 10) || 1;
+                      setFormLevel(Math.min(99, num + 1));
+                    }}
+                    className="px-2 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--search-bg)] hover:bg-[var(--sakura-soft)] text-xs font-mono cursor-pointer font-bold text-[var(--sakura-deep)]"
+                    title="升级 +1"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">
+                  出阵升级后可在此或详情页自定义修改
                 </p>
               </div>
             </div>
@@ -1159,34 +1292,83 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                       </span>
                     </div>
 
-                    {/* Interactive 1-5 Star Bond Level System */}
-                    <div className="flex items-center gap-1 mt-1 px-3 py-1 rounded-full bg-[var(--search-bg)] border border-[var(--border-color)]">
-                      <span className="text-xs font-serif text-[var(--text-color)] font-bold flex items-center gap-1">
-                        <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-                        主仆羁绊:
-                      </span>
-                      <div className="flex items-center gap-1 ml-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={(e) => handleUpdateBond(currentRecord, star, e)}
-                            className="p-1 cursor-pointer hover:scale-130 transition-transform"
-                            title={`点击将羁绊评级设为 ${star} 颗星`}
-                          >
-                            <Star
-                              className={`w-4 h-4 ${
-                                star <= currentBond
-                                  ? 'fill-[var(--accent-gold)] text-[var(--accent-gold)]'
-                                  : 'text-gray-300 dark:text-gray-600'
-                              }`}
-                            />
-                          </button>
-                        ))}
+                    {/* 双核培养档案：左侧「主仆羁绊」 + 右侧「修习等级」(字号与“显现本丸”一致 text-xs，居中并排、自适应响应式) */}
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-1.5 w-full max-w-xl">
+                      {/* 左侧：主仆羁绊 */}
+                      <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--search-bg)] border border-[var(--border-color)] shadow-2xs">
+                        <span className="text-xs font-serif text-[var(--text-color)] font-bold flex items-center gap-1">
+                          <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                          主仆羁绊:
+                        </span>
+                        <div className="flex items-center gap-0.5 ml-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={(e) => handleUpdateBond(currentRecord, star, e)}
+                              className="p-0.5 cursor-pointer hover:scale-125 transition-transform"
+                              title={`点击将羁绊评级设为 ${star} 颗星`}
+                            >
+                              <Star
+                                className={`w-3.5 h-3.5 ${
+                                  star <= currentBond
+                                    ? 'fill-[var(--accent-gold)] text-[var(--accent-gold)]'
+                                    : 'text-gray-300 dark:text-gray-600'
+                                }`}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-[var(--accent-gold)] ml-1">
+                          {currentBond}/5星
+                        </span>
                       </div>
-                      <span className="text-[11px] font-mono font-bold text-[var(--accent-gold)] ml-1">
-                        {currentBond}/5 星
-                      </span>
+
+                      {/* 右侧：修习等级 (小字号 text-xs 与显现本丸完全一致，支持直接自定义输入与微调) */}
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--search-bg)] border border-[var(--border-color)] shadow-2xs text-xs">
+                        <span className="font-serif text-[var(--text-color)] font-bold flex items-center gap-1">
+                          <Shield className="w-3.5 h-3.5 text-[var(--sakura-deep)]" />
+                          修习等级:
+                        </span>
+                        <div className="flex items-center gap-1 font-mono">
+                          <span className="font-bold text-[var(--sakura-deep)]">Lv.</span>
+                          <input
+                            type="text"
+                            value={inlineLevelInput}
+                            onChange={(e) => setInlineLevelInput(e.target.value)}
+                            onBlur={() => handleSaveInlineLevel(currentRecord)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleSaveInlineLevel(currentRecord);
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
+                            placeholder="1"
+                            className="w-12 px-1.5 py-0.5 text-xs text-center font-mono font-bold rounded border border-[var(--sakura-pink)]/50 bg-[var(--panel-color)] text-[var(--header-red)] focus:outline-hidden focus:border-[var(--sakura-deep)] focus:ring-1 focus:ring-[var(--sakura-pink)] transition-all"
+                            title="刀剑升级后可在此直接自定义输入等级（如 99、极35 等），回车或点击空白处保存"
+                          />
+                          {/* 快速 +1 / -1 步进器 */}
+                          <div className="flex items-center border border-[var(--border-color)] rounded overflow-hidden bg-[var(--panel-color)] shadow-2xs ml-0.5">
+                            <button
+                              type="button"
+                              onClick={(e) => handleStepLevel(currentRecord, -1, e)}
+                              className="px-1.5 py-0.5 hover:bg-[var(--sakura-soft)] text-[10px] font-mono text-[var(--text-muted)] hover:text-[var(--text-color)] transition-colors cursor-pointer"
+                              title="降级 -1"
+                            >
+                              -
+                            </button>
+                            <span className="w-px h-3 bg-[var(--border-color)]" />
+                            <button
+                              type="button"
+                              onClick={(e) => handleStepLevel(currentRecord, 1, e)}
+                              className="px-1.5 py-0.5 hover:bg-[var(--sakura-soft)] text-[10px] font-mono text-[var(--sakura-deep)] font-bold transition-colors cursor-pointer"
+                              title="升级 +1"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     {detailInfo.isAnniversaryMonth && (
