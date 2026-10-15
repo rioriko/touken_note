@@ -7,6 +7,9 @@ import {
   NeibanStatus,
   DaozhangRecord,
   ExpeditionRecord,
+  ForgeRecord,
+  DismantleRecord,
+  ForgeRecipe,
 } from '../types';
 import {
   SACRED_FORTUNE_LIST,
@@ -17,6 +20,7 @@ import {
 } from '../dailyFortuneData';
 import { soundManager } from '../utils/soundManager';
 import { ExpeditionSection } from './ExpeditionSection';
+import { ForgeSection } from './ForgeSection';
 import {
   Search,
   Sparkles,
@@ -46,6 +50,9 @@ interface NotesSectionProps {
   neibanRecords: NeibanRecord[];
   daozhangRecords?: DaozhangRecord[];
   expeditions?: ExpeditionRecord[];
+  forgeRecords?: ForgeRecord[];
+  dismantleRecords?: DismantleRecord[];
+  forgeRecipes?: ForgeRecipe[];
   dailyFortune?: DailyFortune;
   saniwaName?: string;
   honmaruName?: string;
@@ -59,6 +66,19 @@ interface NotesSectionProps {
   onUpdateExpedition?: (record: ExpeditionRecord) => void;
   onDeleteExpedition?: (id: string) => void;
   onLoadPresetExpeditions?: () => void;
+  onAddForge?: (record: Omit<ForgeRecord, 'id'>) => void;
+  onDeleteForge?: (id: string) => void;
+  onAddDismantle?: (record: Omit<DismantleRecord, 'id'>) => void;
+  onDeleteDismantle?: (id: string) => void;
+  onLoadPresetForges?: () => void;
+  onLoadPresetDismantles?: () => void;
+  onClearForges?: () => void;
+  onAddForgeRecipe?: (recipe: Omit<ForgeRecipe, 'id'>) => void;
+  onUpdateForgeRecipe?: (recipe: ForgeRecipe) => void;
+  onDeleteForgeRecipe?: (id: string) => void;
+  onLoadReferenceRecipes?: () => void;
+  onClearForgeRecipes?: () => void;
+  onOpenDaozhang?: () => void;
   showToast: (msg: string) => void;
 }
 
@@ -67,6 +87,9 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   neibanRecords,
   daozhangRecords = [],
   expeditions = [],
+  forgeRecords = [],
+  dismantleRecords = [],
+  forgeRecipes = [],
   dailyFortune,
   saniwaName = '主殿',
   honmaruName = '大和',
@@ -80,6 +103,19 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   onUpdateExpedition,
   onDeleteExpedition,
   onLoadPresetExpeditions,
+  onAddForge,
+  onDeleteForge,
+  onAddDismantle,
+  onDeleteDismantle,
+  onLoadPresetForges,
+  onLoadPresetDismantles,
+  onClearForges,
+  onAddForgeRecipe,
+  onUpdateForgeRecipe,
+  onDeleteForgeRecipe,
+  onLoadReferenceRecipes,
+  onClearForgeRecipes,
+  onOpenDaozhang,
   showToast,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -224,6 +260,10 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
       return noteTag === activeNeibanFilter;
     }
 
+    if (activeMainFilter === '锻刀') {
+      return noteTag === '锻刀' || noteTag === '刀解';
+    }
+
     return noteTag === activeMainFilter;
   });
 
@@ -344,7 +384,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
 
         {/* Primary Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          {['全部', '日常', '内番', '战斗', '远征战报', '刀装'].map((tag) => (
+          {['全部', '日常', '内番', '战斗', '远征战报', '刀装', '锻刀'].map((tag) => (
             <button
               key={tag}
               onClick={() => {
@@ -993,6 +1033,30 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
           onUpdateExpedition={onUpdateExpedition}
           onDeleteExpedition={onDeleteExpedition || (() => {})}
           onLoadPresetExpeditions={onLoadPresetExpeditions}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Special Module 4: 锻刀造刃与刀解消纳模块 (When '锻刀' is selected) */}
+      {activeMainFilter === '锻刀' && (
+        <ForgeSection
+          forgeRecords={forgeRecords}
+          dismantleRecords={dismantleRecords}
+          daozhangRecords={daozhangRecords}
+          forgeRecipes={forgeRecipes}
+          onAddForge={onAddForge || (() => {})}
+          onDeleteForge={onDeleteForge || (() => {})}
+          onAddDismantle={onAddDismantle || (() => {})}
+          onDeleteDismantle={onDeleteDismantle || (() => {})}
+          onLoadPresetForges={onLoadPresetForges}
+          onLoadPresetDismantles={onLoadPresetDismantles}
+          onClearForges={onClearForges}
+          onAddForgeRecipe={onAddForgeRecipe}
+          onUpdateForgeRecipe={onUpdateForgeRecipe}
+          onDeleteForgeRecipe={onDeleteForgeRecipe}
+          onLoadReferenceRecipes={onLoadReferenceRecipes}
+          onClearForgeRecipes={onClearForgeRecipes}
+          onOpenDaozhang={onOpenDaozhang}
           showToast={showToast}
         />
       )}

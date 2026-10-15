@@ -9,9 +9,12 @@ import {
   BenwanConfig,
   Assistant,
   ExpeditionRecord,
+  ForgeRecord,
+  DismantleRecord,
   COMMON_SWORD_TYPES,
   SwordType,
   ColorTheme,
+  ForgeRecipe,
 } from './types';
 import {
   INITIAL_NOTES,
@@ -22,6 +25,10 @@ import {
   INITIAL_PRESET_TREASURES,
   INITIAL_WEEKLY_PLANNER,
   INITIAL_EXPEDITIONS,
+  INITIAL_FORGE_RECORDS,
+  INITIAL_DISMANTLE_RECORDS,
+  INITIAL_FORGE_RECIPES,
+  REFERENCE_FORGE_RECIPES,
 } from './presetData';
 import { APP_DEFAULT_ABOUT } from './changelogData';
 import { Header } from './components/Header';
@@ -47,6 +54,9 @@ export default function App() {
   const [daozhangRecords, setDaozhangRecords] = useState<DaozhangRecord[]>([]);
   const [treasures, setTreasures] = useState<TreasureItem[]>([]);
   const [expeditions, setExpeditions] = useState<ExpeditionRecord[]>([]);
+  const [forgeRecords, setForgeRecords] = useState<ForgeRecord[]>([]);
+  const [dismantleRecords, setDismantleRecords] = useState<DismantleRecord[]>([]);
+  const [forgeRecipes, setForgeRecipes] = useState<ForgeRecipe[]>(INITIAL_FORGE_RECIPES);
   const [weeklyPlanner, setWeeklyPlanner] = useState<WeeklyPlannerData>(INITIAL_WEEKLY_PLANNER);
   const [activeMainView, setActiveMainView] = useState<'notes' | 'planner'>('notes');
   const [config, setConfig] = useState<BenwanConfig>({
@@ -239,6 +249,58 @@ export default function App() {
         }
       } else {
         setExpeditions(INITIAL_EXPEDITIONS);
+      }
+
+      // Load forge records from localStorage (Default: empty [] "无收录" state)
+      const savedForges = localStorage.getItem('benwan_forges');
+      if (savedForges) {
+        try {
+          const parsedForges = JSON.parse(savedForges);
+          if (Array.isArray(parsedForges)) {
+            setForgeRecords(parsedForges);
+          } else {
+            setForgeRecords([]);
+          }
+        } catch {
+          setForgeRecords([]);
+        }
+      } else {
+        // 初始为无收录干净状态，审神者可自行记录或点击“载入流水范本”
+        setForgeRecords([]);
+      }
+
+      // Load dismantle records from localStorage
+      const savedDismantles = localStorage.getItem('benwan_dismantles');
+      if (savedDismantles) {
+        try {
+          const parsedDismantles = JSON.parse(savedDismantles);
+          if (Array.isArray(parsedDismantles)) {
+            setDismantleRecords(parsedDismantles);
+          } else {
+            setDismantleRecords(INITIAL_DISMANTLE_RECORDS);
+          }
+        } catch {
+          setDismantleRecords(INITIAL_DISMANTLE_RECORDS);
+        }
+      } else {
+        setDismantleRecords(INITIAL_DISMANTLE_RECORDS);
+      }
+
+      // Load custom forge recipes from localStorage (Default: empty [] "无收录")
+      const savedRecipes = localStorage.getItem('benwan_forge_recipes');
+      if (savedRecipes) {
+        try {
+          const parsedRecipes = JSON.parse(savedRecipes);
+          if (Array.isArray(parsedRecipes)) {
+            setForgeRecipes(parsedRecipes);
+          } else {
+            setForgeRecipes(INITIAL_FORGE_RECIPES);
+          }
+        } catch {
+          setForgeRecipes(INITIAL_FORGE_RECIPES);
+        }
+      } else {
+        setForgeRecipes(INITIAL_FORGE_RECIPES);
       }
 
       const savedConfig = localStorage.getItem('benwan_config');
@@ -602,6 +664,184 @@ export default function App() {
     }, 550);
   };
 
+  // Forge & Dismantle handlers
+  const saveForgesToStorage = (updated: ForgeRecord[]) => {
+    setForgeRecords(updated);
+    localStorage.setItem('benwan_forges', JSON.stringify(updated));
+  };
+
+  const saveDismantlesToStorage = (updated: DismantleRecord[]) => {
+    setDismantleRecords(updated);
+    localStorage.setItem('benwan_dismantles', JSON.stringify(updated));
+  };
+
+  const handleAddForge = (record: Omit<ForgeRecord, 'id'>) => {
+    const newEntry: ForgeRecord = {
+      id: `forge-${Date.now()}`,
+      ...record,
+    };
+    const updatedForges = [newEntry, ...forgeRecords];
+    saveForgesToStorage(updatedForges);
+
+    // 联合互动：刀账同名刃保有数量 +1
+    const trimmedName = record.swordName.trim();
+    const existingIndex = daozhangRecords.findIndex((r) => r.name === trimmedName);
+
+    if (existingIndex >= 0) {
+      const current = daozhangRecords[existingIndex];
+      const newCount = (current.count !== undefined ? current.count : 1) + 1;
+      const newForgeCount = (current.forgeCount || 1) + 1;
+      const updatedSword: DaozhangRecord = {
+        ...current,
+        count: newCount,
+        forgeCount: newForgeCount,
+      };
+      const updatedDaozhang = [...daozhangRecords];
+      updatedDaozhang[existingIndex] = updatedSword;
+      saveDaozhangToStorage(updatedDaozhang);
+      showToast(`🔥 炉火盛放！【${trimmedName}】顺利显现，本丸在库增至 ${newCount} 振！`, 'success');
+    } else {
+      // 刀账尚无此刃：自动登用录入刀账！
+      const matchClassic = CLASSIC_PRESET_SWORDS.find((s) => s.name === trimmedName);
+      const newSword: DaozhangRecord = {
+        id: `dz-${Date.now()}`,
+        number: matchClassic?.number || `No.${String(daozhangRecords.length + 1).padStart(3, '0')}`,
+        name: trimmedName,
+        swordType: record.swordType || matchClassic?.swordType || '打刀',
+        school: matchClassic?.school || '本丸',
+        date: record.date || new Date().toISOString().split('T')[0],
+        notes: matchClassic?.notes || `于 ${record.date} 执炉锻造初次显现（耗资：木${record.charcoal}/钢${record.steel}/水${record.coolant}/石${record.whetstone}）。`,
+        count: 1,
+        forgeCount: 1,
+        dismantleCount: 0,
+        level: 1,
+        bondLevel: 1,
+      };
+      saveDaozhangToStorage([newSword, ...daozhangRecords]);
+      showToast(`🎉 新刃显现！【${trimmedName}】已正式登用录入本丸刀账典籍！`, 'success');
+    }
+  };
+
+  const handleDeleteForge = (id: string) => {
+    const updated = forgeRecords.filter((f) => f.id !== id);
+    saveForgesToStorage(updated);
+    showToast('已移除该条锻刀流水');
+  };
+
+  const handleAddDismantle = (record: Omit<DismantleRecord, 'id'>) => {
+    const newEntry: DismantleRecord = {
+      id: `dismantle-${Date.now()}`,
+      ...record,
+    };
+    const updatedDismantles = [newEntry, ...dismantleRecords];
+    saveDismantlesToStorage(updatedDismantles);
+
+    // 联合互动：刀账对应刀剑男士保有振数扣减
+    const trimmedName = record.swordName.trim();
+    const existingIndex = daozhangRecords.findIndex((r) => r.name === trimmedName);
+
+    if (existingIndex >= 0) {
+      const current = daozhangRecords[existingIndex];
+      const oldCount = current.count !== undefined ? current.count : 1;
+      const newCount = Math.max(0, oldCount - (record.count || 1));
+      const newDismantleCount = (current.dismantleCount || 0) + (record.count || 1);
+      const updatedSword: DaozhangRecord = {
+        ...current,
+        count: newCount,
+        dismantleCount: newDismantleCount,
+      };
+      const updatedDaozhang = [...daozhangRecords];
+      updatedDaozhang[existingIndex] = updatedSword;
+      saveDaozhangToStorage(updatedDaozhang);
+      showToast(`✂️ 已刀解【${trimmedName}】${record.count}振，回收精纯资材！在库现余 ${newCount} 振`, 'success');
+    } else {
+      showToast(`✂️ 已记录刀解【${trimmedName}】${record.count}振，资材已纳库！`, 'success');
+    }
+  };
+
+  const handleDeleteDismantle = (id: string) => {
+    const target = dismantleRecords.find((d) => d.id === id);
+    const updated = dismantleRecords.filter((d) => d.id !== id);
+    saveDismantlesToStorage(updated);
+
+    // 撤销刀解，返还振数至刀账
+    if (target) {
+      const trimmedName = target.swordName.trim();
+      const existingIndex = daozhangRecords.findIndex((r) => r.name === trimmedName);
+      if (existingIndex >= 0) {
+        const current = daozhangRecords[existingIndex];
+        const updatedSword: DaozhangRecord = {
+          ...current,
+          count: (current.count !== undefined ? current.count : 1) + (target.count || 1),
+          dismantleCount: Math.max(0, (current.dismantleCount || 0) - (target.count || 1)),
+        };
+        const updatedDaozhang = [...daozhangRecords];
+        updatedDaozhang[existingIndex] = updatedSword;
+        saveDaozhangToStorage(updatedDaozhang);
+      }
+    }
+    showToast('已撤销该条刀解记录，对应刃数已恢复刀账保有量');
+  };
+
+  const handleLoadPresetForges = () => {
+    setDataSwitchingMessage('正在开卷呈纳典范锻刀流水...');
+    setTimeout(() => {
+      saveForgesToStorage(INITIAL_FORGE_RECORDS);
+      setDataSwitchingMessage(null);
+      showToast('已成功载入典范锻刀流水', 'success');
+    }, 550);
+  };
+
+  const handleLoadPresetDismantles = () => {
+    setDataSwitchingMessage('正在开卷呈纳典范刀解记录...');
+    setTimeout(() => {
+      saveDismantlesToStorage(INITIAL_DISMANTLE_RECORDS);
+      setDataSwitchingMessage(null);
+      showToast('已成功载入典范刀解记录', 'success');
+    }, 550);
+  };
+
+  const handleClearForges = () => {
+    saveForgesToStorage([]);
+  };
+
+  // Forge Custom Recipes Handlers
+  const saveForgeRecipesToStorage = (updated: ForgeRecipe[]) => {
+    setForgeRecipes(updated);
+    localStorage.setItem('benwan_forge_recipes', JSON.stringify(updated));
+  };
+
+  const handleAddForgeRecipe = (recipe: Omit<ForgeRecipe, 'id'>) => {
+    const newEntry: ForgeRecipe = {
+      id: `recipe-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      ...recipe,
+    };
+    const updated = [newEntry, ...forgeRecipes];
+    saveForgeRecipesToStorage(updated);
+  };
+
+  const handleUpdateForgeRecipe = (recipe: ForgeRecipe) => {
+    const updated = forgeRecipes.map((r) => (r.id === recipe.id ? recipe : r));
+    saveForgeRecipesToStorage(updated);
+  };
+
+  const handleDeleteForgeRecipe = (id: string) => {
+    const updated = forgeRecipes.filter((r) => r.id !== id);
+    saveForgeRecipesToStorage(updated);
+  };
+
+  const handleLoadReferenceRecipes = () => {
+    const existingNames = new Set(forgeRecipes.map((r) => r.name));
+    const toAdd = REFERENCE_FORGE_RECIPES.filter((ref) => !existingNames.has(ref.name));
+    const updated = [...forgeRecipes, ...(toAdd.length > 0 ? toAdd : REFERENCE_FORGE_RECIPES)];
+    saveForgeRecipesToStorage(updated);
+  };
+
+  const handleClearForgeRecipes = () => {
+    saveForgeRecipesToStorage([]);
+  };
+
   // Export Data JSON
   const handleExportData = () => {
     const dataToExport = {
@@ -610,6 +850,9 @@ export default function App() {
       daozhangRecords,
       treasures,
       expeditions,
+      forgeRecords,
+      dismantleRecords,
+      forgeRecipes,
       weeklyPlanner,
       config,
       assistant,
@@ -651,6 +894,15 @@ export default function App() {
           }
           if (imported.expeditions && Array.isArray(imported.expeditions)) {
             saveExpeditionsToStorage(imported.expeditions);
+          }
+          if (imported.forgeRecords && Array.isArray(imported.forgeRecords)) {
+            saveForgesToStorage(imported.forgeRecords);
+          }
+          if (imported.dismantleRecords && Array.isArray(imported.dismantleRecords)) {
+            saveDismantlesToStorage(imported.dismantleRecords);
+          }
+          if (imported.forgeRecipes && Array.isArray(imported.forgeRecipes)) {
+            saveForgeRecipesToStorage(imported.forgeRecipes);
           }
           if (imported.weeklyPlanner) {
             saveWeeklyPlannerToStorage(imported.weeklyPlanner);
@@ -775,6 +1027,9 @@ export default function App() {
             neibanRecords={neibanRecords}
             daozhangRecords={daozhangRecords}
             expeditions={expeditions}
+            forgeRecords={forgeRecords}
+            dismantleRecords={dismantleRecords}
+            forgeRecipes={forgeRecipes}
             dailyFortune={dailyFortune}
             honmaruName={config.honmaruName || '大和'}
             saniwaName={config.saniwaName || '主殿'}
@@ -788,6 +1043,19 @@ export default function App() {
             onUpdateExpedition={handleUpdateExpedition}
             onDeleteExpedition={handleDeleteExpedition}
             onLoadPresetExpeditions={handleLoadPresetExpeditions}
+            onAddForge={handleAddForge}
+            onDeleteForge={handleDeleteForge}
+            onAddDismantle={handleAddDismantle}
+            onDeleteDismantle={handleDeleteDismantle}
+            onLoadPresetForges={handleLoadPresetForges}
+            onLoadPresetDismantles={handleLoadPresetDismantles}
+            onClearForges={handleClearForges}
+            onAddForgeRecipe={handleAddForgeRecipe}
+            onUpdateForgeRecipe={handleUpdateForgeRecipe}
+            onDeleteForgeRecipe={handleDeleteForgeRecipe}
+            onLoadReferenceRecipes={handleLoadReferenceRecipes}
+            onClearForgeRecipes={handleClearForgeRecipes}
+            onOpenDaozhang={() => setIsDaozhangOpen(true)}
             showToast={showToast}
           />
         ) : (
@@ -841,6 +1109,8 @@ export default function App() {
         onClose={() => setIsDaozhangOpen(false)}
         records={daozhangRecords}
         treasures={treasures}
+        forgeRecords={forgeRecords}
+        dismantleRecords={dismantleRecords}
         onSaveRecord={handleSaveDaozhang}
         onDeleteRecord={handleDeleteDaozhang}
         onSaveTreasure={handleSaveTreasure}
@@ -848,6 +1118,10 @@ export default function App() {
         onLoadPresetSwords={handleLoadPresetSwords}
         onDesignateAssistant={(name, school) => {
           handleSaveAssistant({ name, school });
+        }}
+        onNavigateToForge={() => {
+          setIsDaozhangOpen(false);
+          setActiveMainView('notes');
         }}
         showToast={showToast}
       />

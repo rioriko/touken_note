@@ -3,6 +3,8 @@ import {
   DaozhangRecord,
   DaozhangMemoEntry,
   TreasureItem,
+  ForgeRecord,
+  DismantleRecord,
   COMMON_SWORD_TYPES,
   COMMON_SCHOOLS,
   SwordType,
@@ -36,6 +38,9 @@ import {
   UserCheck,
   Copy,
   Maximize2,
+  Flame,
+  Scissors,
+  Hammer,
 } from 'lucide-react';
 
 interface DaozhangModalProps {
@@ -43,12 +48,15 @@ interface DaozhangModalProps {
   onClose: () => void;
   records: DaozhangRecord[];
   treasures: TreasureItem[];
+  forgeRecords?: ForgeRecord[];
+  dismantleRecords?: DismantleRecord[];
   onSaveRecord: (record: DaozhangRecord, isNew: boolean) => void;
   onDeleteRecord: (id: string) => void;
   onSaveTreasure: (item: TreasureItem) => void;
   onDeleteTreasure: (id: string) => void;
   onLoadPresetSwords: () => void;
   onDesignateAssistant?: (name: string, school: string) => void;
+  onNavigateToForge?: () => void;
   showToast: (msg: string) => void;
 }
 
@@ -83,12 +91,15 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
   onClose,
   records,
   treasures,
+  forgeRecords = [],
+  dismantleRecords = [],
   onSaveRecord,
   onDeleteRecord,
   onSaveTreasure,
   onDeleteTreasure,
   onLoadPresetSwords,
   onDesignateAssistant,
+  onNavigateToForge,
   showToast,
 }) => {
   const [currentView, setCurrentView] = useState<DaozhangView>('index');
@@ -741,6 +752,20 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                           >
                             Lv.{dz.level !== undefined ? dz.level : 1}
                           </span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded-sm font-mono font-bold border ${
+                              (dz.count !== undefined ? dz.count : 1) > 1
+                                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300'
+                                : (dz.count !== undefined ? dz.count : 1) === 1
+                                ? 'bg-[var(--search-bg)] text-[var(--text-muted)] border-[var(--border-color)]'
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-300'
+                            }`}
+                            title={`本丸当前在库保有量: ${dz.count !== undefined ? dz.count : 1} 振 (累计锻造: ${dz.forgeCount || 1} · 刀解: ${dz.dismantleCount || 0})`}
+                          >
+                            {(dz.count !== undefined ? dz.count : 1) > 0
+                              ? `在库${dz.count !== undefined ? dz.count : 1}振`
+                              : '已刀解'}
+                          </span>
                         </div>
 
                         {/* Bond Level (1-5 Stars Quick Click) */}
@@ -796,6 +821,7 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                         <th className="py-2.5 px-3 font-semibold w-20">刀种</th>
                         <th className="py-2.5 px-3 font-semibold w-20">流派</th>
                         <th className="py-2.5 px-3 font-semibold w-16">等级</th>
+                        <th className="py-2.5 px-3 font-semibold w-20">在库振数</th>
                         <th className="py-2.5 px-3 font-semibold w-24">羁绊值</th>
                         <th className="py-2.5 px-3 font-semibold w-36">显现纪念时日</th>
                         <th className="py-2.5 px-3 font-semibold hidden md:table-cell">逸事摘记</th>
@@ -848,6 +874,22 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                                 title={`修习等级: Lv.${dz.level !== undefined ? dz.level : 1}`}
                               >
                                 Lv.{dz.level !== undefined ? dz.level : 1}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3">
+                              <span
+                                className={`px-1.5 py-0.5 rounded font-mono font-bold text-xs border ${
+                                  (dz.count !== undefined ? dz.count : 1) > 1
+                                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300'
+                                    : (dz.count !== undefined ? dz.count : 1) === 1
+                                    ? 'bg-[var(--search-bg)] text-[var(--text-color)] border-[var(--border-color)]'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-300'
+                                }`}
+                                title={`在库 ${dz.count !== undefined ? dz.count : 1} 振 (累计锻造 ${dz.forgeCount || 1} · 刀解 ${dz.dismantleCount || 0})`}
+                              >
+                                {(dz.count !== undefined ? dz.count : 1) > 0
+                                  ? `${dz.count !== undefined ? dz.count : 1} 振`
+                                  : '已刀解'}
                               </span>
                             </td>
                             <td className="py-2 px-3">
@@ -1369,6 +1411,40 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                           </div>
                         </div>
                       </div>
+
+                      {/* 第三胶囊：在库保有振数 (联动锻刀与刀解) */}
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--search-bg)] border border-[var(--border-color)] shadow-2xs text-xs">
+                        <span className="font-serif text-[var(--text-color)] font-bold flex items-center gap-1">
+                          <Hammer className="w-3.5 h-3.5 text-amber-600" />
+                          在库保有:
+                        </span>
+                        <span
+                          className={`font-mono font-bold px-1.5 py-0.2 rounded ${
+                            (currentRecord.count !== undefined ? currentRecord.count : 1) > 1
+                              ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200'
+                              : (currentRecord.count !== undefined ? currentRecord.count : 1) === 1
+                              ? 'text-[var(--header-red)]'
+                              : 'text-gray-400'
+                          }`}
+                        >
+                          {(currentRecord.count !== undefined ? currentRecord.count : 1) > 0
+                            ? `${currentRecord.count !== undefined ? currentRecord.count : 1} 振`
+                            : '已刀解归虚'}
+                        </span>
+                        {onNavigateToForge && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onClose();
+                              onNavigateToForge();
+                            }}
+                            className="text-[10px] text-[var(--sakura-deep)] hover:underline ml-0.5 cursor-pointer"
+                            title="前往锻刀房锻造或刀解"
+                          >
+                            去锻造/刀解
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {detailInfo.isAnniversaryMonth && (
@@ -1760,6 +1836,99 @@ export const DaozhangModal: React.FC<DaozhangModalProps> = ({
                   })}
                 </div>
               )}
+            </div>
+
+            {/* 该刀剑男士锻刀与刀解履历纪要 */}
+            <div className="bg-[var(--panel-color)] border border-amber-300/80 dark:border-amber-800/60 rounded-xl p-4 sm:p-5 shadow-xs border-l-4 border-l-amber-600 space-y-3 font-serif">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-600" />
+                  <h3 className="font-serif font-bold text-sm text-[var(--text-color)]">
+                    【{currentRecord.name}】锻造显现与刀解纪要
+                  </h3>
+                  <span className="text-[11px] text-[var(--text-muted)] font-mono">
+                    累计锻出: {forgeRecords.filter((f) => f.swordName === currentRecord.name).length} 振 ·
+                    刀解回炉: {dismantleRecords.filter((d) => d.swordName === currentRecord.name).reduce((acc, d) => acc + (d.count || 1), 0)} 振
+                  </span>
+                </div>
+
+                {onNavigateToForge && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onNavigateToForge();
+                    }}
+                    className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300 hover:text-[var(--header-red)] transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>前往锻刀房</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Forge and Dismantle lists for this sword */}
+              {(() => {
+                const swordForges = forgeRecords.filter((f) => f.swordName === currentRecord.name);
+                const swordDismantles = dismantleRecords.filter((d) => d.swordName === currentRecord.name);
+
+                if (swordForges.length === 0 && swordDismantles.length === 0) {
+                  return (
+                    <div className="py-4 text-center text-xs text-[var(--text-muted)] italic">
+                      本振为初始入丸或常规就任，暂无炉火锻刀或刀解流水。主殿可在「锻刀」中记录该刀的锻造显现！
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-2 text-xs">
+                    {swordForges.map((f) => (
+                      <div
+                        key={f.id}
+                        className="p-2.5 rounded-lg bg-[var(--search-bg)] border border-[var(--border-color)] flex items-center justify-between flex-wrap gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-orange-600 font-bold">🔥 锻造显现</span>
+                          <span className="font-mono text-[var(--text-muted)]">{f.date}</span>
+                          <span className="font-mono px-1.5 py-0.2 rounded bg-[var(--panel-color)] text-[var(--header-red)] border border-[var(--border-color)]">
+                            {f.duration}
+                          </span>
+                          <span className="text-[var(--text-muted)]">
+                            木{f.charcoal}/钢{f.steel}/水{f.coolant}/石{f.whetstone}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-[var(--text-muted)]">
+                          {f.assistant && <span>近侍: {f.assistant} </span>}
+                          {f.ofuda && f.ofuda !== '无' && <span className="text-amber-600 font-bold">[{f.ofuda}札] </span>}
+                          {f.notes && <span className="italic">“{f.notes}”</span>}
+                        </div>
+                      </div>
+                    ))}
+
+                    {swordDismantles.map((d) => (
+                      <div
+                        key={d.id}
+                        className="p-2.5 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 flex items-center justify-between flex-wrap gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-amber-700 font-bold">✂️ 刀解回炉</span>
+                          <span className="font-mono text-[var(--text-muted)]">{d.date}</span>
+                          <span className="font-mono font-bold text-amber-800 dark:text-amber-300">
+                            - {d.count} 振
+                          </span>
+                          <span className="text-[11px] text-[var(--text-muted)]">
+                            回收: 🪵+{d.charcoalReturned} 🛡️+{d.steelReturned} 💧+{d.coolantReturned} 🪨+{d.whetstoneReturned}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-[var(--text-muted)]">
+                          {d.reason && <span>缘由: {d.reason} </span>}
+                          {d.notes && <span className="italic">“{d.notes}”</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Bottom Actions: Return to List + Delete + Full Edit Button */}
