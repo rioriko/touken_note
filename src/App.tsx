@@ -15,6 +15,7 @@ import {
   SwordType,
   ColorTheme,
   ForgeRecipe,
+  WordCard,
 } from './types';
 import {
   INITIAL_NOTES,
@@ -30,6 +31,7 @@ import {
   INITIAL_FORGE_RECIPES,
   REFERENCE_FORGE_RECIPES,
 } from './presetData';
+import { DEFAULT_WORD_CARDS } from './wordCardData';
 import { APP_DEFAULT_ABOUT } from './changelogData';
 import { Header } from './components/Header';
 import { NotesSection } from './components/NotesSection';
@@ -40,12 +42,14 @@ import { AssistantModal } from './components/AssistantModal';
 import { SettingsModal } from './components/SettingsModal';
 import { WelcomeModal } from './components/WelcomeModal';
 import { DailyFortuneModal } from './components/DailyFortuneModal';
+import { AttendantBubble } from './components/AttendantBubble';
+import { WordCardModal } from './components/WordCardModal';
 import { generateDailyFortune, DailyFortune } from './dailyFortuneData';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { SwordMonLoader } from './components/SwordMonLoader';
 import { SceneryOverlay } from './components/SceneryOverlay';
 import { soundManager } from './utils/soundManager';
-import { UserCheck, Sparkles } from 'lucide-react';
+import { UserCheck, Sparkles, MessageSquare } from 'lucide-react';
 
 export default function App() {
   // Application Data States
@@ -69,11 +73,20 @@ export default function App() {
     scenery: 'sakura',
     audioEnabled: false,
     ambientSoundType: 'windbell',
+    bubbleEnabled: true,
+    bubbleInterval: 60,
+    bubbleDuration: 14,
   });
   const [assistant, setAssistant] = useState<Assistant>({
     name: '加州清光',
     school: '打刀',
   });
+
+  // Word Cards & Attendant Bubble States
+  const [wordCards, setWordCards] = useState<WordCard[]>(DEFAULT_WORD_CARDS);
+  const [isWordCardModalOpen, setIsWordCardModalOpen] = useState(false);
+  const [isBubbleVisible, setIsBubbleVisible] = useState(false);
+  const [activeBubbleCard, setActiveBubbleCard] = useState<WordCard | null>(null);
 
   // Modal Visibility States
   const [isDaozhangOpen, setIsDaozhangOpen] = useState(false);
@@ -301,6 +314,23 @@ export default function App() {
         }
       } else {
         setForgeRecipes(INITIAL_FORGE_RECIPES);
+      }
+
+      // Load word cards from localStorage
+      const savedWordCards = localStorage.getItem('benwan_word_cards');
+      if (savedWordCards) {
+        try {
+          const parsedCards = JSON.parse(savedWordCards);
+          if (Array.isArray(parsedCards) && parsedCards.length > 0) {
+            setWordCards(parsedCards);
+          } else {
+            setWordCards(DEFAULT_WORD_CARDS);
+          }
+        } catch {
+          setWordCards(DEFAULT_WORD_CARDS);
+        }
+      } else {
+        setWordCards(DEFAULT_WORD_CARDS);
       }
 
       const savedConfig = localStorage.getItem('benwan_config');
@@ -803,6 +833,7 @@ export default function App() {
 
   const handleClearForges = () => {
     saveForgesToStorage([]);
+    console.log('localStorage benwan_forges:', localStorage.getItem('benwan_forges'));
   };
 
   // Forge Custom Recipes Handlers
@@ -854,6 +885,7 @@ export default function App() {
       dismantleRecords,
       forgeRecipes,
       weeklyPlanner,
+      wordCards,
       config,
       assistant,
       exportedAt: new Date().toISOString(),
@@ -907,6 +939,9 @@ export default function App() {
           if (imported.weeklyPlanner) {
             saveWeeklyPlannerToStorage(imported.weeklyPlanner);
           }
+          if (imported.wordCards && Array.isArray(imported.wordCards)) {
+            saveWordCardsToStorage(imported.wordCards);
+          }
           if (imported.config) {
             handleUpdateConfig(imported.config);
           }
@@ -930,6 +965,124 @@ export default function App() {
     setWeeklyPlanner(updated);
     localStorage.setItem('benwan_planner', JSON.stringify(updated));
   };
+
+  // Word Cards & Attendant Bubble Handlers
+  const saveWordCardsToStorage = (updated: WordCard[]) => {
+    setWordCards(updated);
+    localStorage.setItem('benwan_word_cards', JSON.stringify(updated));
+  };
+
+  const handleDrawNextBubbleCard = () => {
+    if (wordCards.length === 0) return;
+    let nextCard: WordCard;
+    if (wordCards.length > 1 && activeBubbleCard) {
+      const candidates = wordCards.filter((c) => c.id !== activeBubbleCard.id);
+      nextCard = candidates[Math.floor(Math.random() * candidates.length)] || wordCards[0];
+    } else {
+      nextCard = wordCards[Math.floor(Math.random() * wordCards.length)];
+    }
+    setActiveBubbleCard(nextCard);
+    setIsBubbleVisible(true);
+  };
+
+  const handleUploadWordCards = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        if (file.name.endsWith('.json')) {
+          const parsed = JSON.parse(text);
+          if (Array.isArray(parsed)) {
+            const validCards: WordCard[] = parsed.map((item, idx) => ({
+              id: item.id || `card-${Date.now()}-${idx}`,
+              text: typeof item === 'string' ? item : item.text || '',
+              author: item.author || assistant.name || '近侍',
+              category: item.category || '导入',
+              createdAt: item.createdAt || new Date().toISOString().split('T')[0],
+            })).filter((c) => c.text.length > 0);
+
+            if (validCards.length > 0) {
+              const updated = [...validCards, ...wordCards];
+              saveWordCardsToStorage(updated);
+              showToast(`从 JSON 成功载入 ${validCards.length} 振字卡！`, 'success');
+            } else {
+              showToast('未能从文件中解析出有效字卡', 'warning');
+            }
+          }
+        } else {
+          const lines = text
+            .split('\n')
+            .map((l) => l.trim())
+            .filter((l) => l.length > 0);
+
+          if (lines.length > 0) {
+            const newCards: WordCard[] = lines.map((line, idx) => {
+              let author = assistant.name || '近侍';
+              let content = line;
+              const bracketMatch = line.match(/^【(.*?)】\s*(.+)$/);
+              if (bracketMatch) {
+                author = bracketMatch[1];
+                content = bracketMatch[2];
+              }
+              return {
+                id: `card-${Date.now()}-${idx}`,
+                text: content,
+                author,
+                category: '导入',
+                createdAt: new Date().toISOString().split('T')[0],
+              };
+            });
+            const updated = [...newCards, ...wordCards];
+            saveWordCardsToStorage(updated);
+            showToast(`从 TXT 文卷顺利载入 ${newCards.length} 振字卡！`, 'success');
+          } else {
+            showToast('文本文件内容为空', 'warning');
+          }
+        }
+      } catch (err) {
+        showToast('字卡解析失败，请确保格式正确', 'warning');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  // Periodic Bubble Greetings Timer: pops up every interval seconds
+  useEffect(() => {
+    if (config.bubbleEnabled === false || wordCards.length === 0) {
+      return;
+    }
+
+    const intervalSec = Math.max(10, config.bubbleInterval || 60);
+    const timer = setInterval(() => {
+      handleDrawNextBubbleCard();
+    }, intervalSec * 1000);
+
+    return () => clearInterval(timer);
+  }, [config.bubbleEnabled, config.bubbleInterval, wordCards, activeBubbleCard]);
+
+  // Auto-dismiss bubble after duration (default 14 seconds)
+  useEffect(() => {
+    if (!isBubbleVisible) return;
+    const duration = (config.bubbleDuration || 14) * 1000;
+    const timer = setTimeout(() => {
+      setIsBubbleVisible(false);
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [isBubbleVisible, activeBubbleCard, config.bubbleDuration]);
+
+  // Initial welcome bubble after slight delay if enabled
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (config.bubbleEnabled !== false && wordCards.length > 0 && !activeBubbleCard) {
+        handleDrawNextBubbleCard();
+      }
+    }, 3800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleToggleTheme = () => {
     const nextTheme = config.theme === 'dark' ? 'light' : 'dark';
@@ -1068,14 +1221,35 @@ export default function App() {
         )}
       </main>
 
-      {/* Bottom Assistant Widget (Click to designate secretary or view today's fortune) */}
+      {/* Attendant Speech Bubble (Image 1 location: directly above assistant badge) */}
+      <AttendantBubble
+        card={activeBubbleCard}
+        assistant={assistant}
+        isVisible={isBubbleVisible}
+        onDismiss={() => setIsBubbleVisible(false)}
+        onDrawNext={handleDrawNextBubbleCard}
+        onOpenSettings={() => setIsWordCardModalOpen(true)}
+        audioEnabled={config.audioEnabled || false}
+      />
+
+      {/* Bottom Assistant Widget (Click to designate secretary or listen to quotes) */}
       <div className="fixed bottom-4 left-4 z-20 flex items-center gap-2">
         <div
-          onClick={() => setIsAssistantOpen(true)}
-          title="点击任命近侍或查看今日签文"
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-[var(--panel-color)] border border-[var(--sakura-pink)] shadow-md hover:scale-105 transition-all cursor-pointer group"
+          onClick={() => {
+            // Clicking badge triggers a fresh attendant quote bubble
+            handleDrawNextBubbleCard();
+          }}
+          title="点击聆听近侍言叶问候 (长按或点击头像任命近侍)"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-[var(--panel-color)] border border-[var(--sakura-pink)] shadow-md hover:scale-105 transition-all cursor-pointer group select-none"
         >
-          <div className="w-6 h-6 rounded-full bg-[var(--sakura-soft)] flex items-center justify-center text-[var(--sakura-deep)] group-hover:bg-[var(--sakura-pink)] transition-colors">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsAssistantOpen(true);
+            }}
+            title="点击任命或更换近侍"
+            className="w-6 h-6 rounded-full bg-[var(--sakura-soft)] flex items-center justify-center text-[var(--sakura-deep)] group-hover:bg-[var(--sakura-pink)] transition-colors hover:scale-110"
+          >
             <UserCheck className="w-3.5 h-3.5" />
           </div>
           <div className="flex items-center gap-1.5 text-xs">
@@ -1092,6 +1266,25 @@ export default function App() {
             </span>
           </div>
         </div>
+
+        {/* Quick Bubble Toggle Button */}
+        <button
+          onClick={() => {
+            if (isBubbleVisible) {
+              setIsBubbleVisible(false);
+            } else {
+              handleDrawNextBubbleCard();
+            }
+          }}
+          title={isBubbleVisible ? '隐去近侍气泡' : '浮现近侍言叶气泡'}
+          className={`w-8 h-8 rounded-full bg-[var(--panel-color)] border border-[var(--sakura-pink)] shadow-md hover:scale-110 text-xs font-serif transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+            isBubbleVisible
+              ? 'bg-[var(--sakura-soft)] text-[var(--sakura-deep)]'
+              : 'text-[var(--text-muted)] hover:text-[var(--sakura-deep)]'
+          }`}
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+        </button>
 
         {/* Quick Fortune Button right beside assistant badge */}
         <button
@@ -1156,6 +1349,22 @@ export default function App() {
         onImportData={handleImportData}
         onLoadPresetSwords={handleLoadPresetSwords}
         onLoadPresetNeiban={handleLoadPresetNeiban}
+        wordCards={wordCards}
+        onOpenWordCardModal={() => setIsWordCardModalOpen(true)}
+        onUploadWordCards={handleUploadWordCards}
+        onTriggerBubbleTest={handleDrawNextBubbleCard}
+        showToast={showToast}
+      />
+
+      <WordCardModal
+        isOpen={isWordCardModalOpen}
+        onClose={() => setIsWordCardModalOpen(false)}
+        wordCards={wordCards}
+        onSaveWordCards={saveWordCardsToStorage}
+        config={config}
+        onUpdateConfig={handleUpdateConfig}
+        assistant={assistant}
+        onTriggerBubbleTest={handleDrawNextBubbleCard}
         showToast={showToast}
       />
 

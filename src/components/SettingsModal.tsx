@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { BenwanConfig, ColorTheme, SceneryType, AmbientSoundType } from '../types';
+import { BenwanConfig, ColorTheme, SceneryType, AmbientSoundType, WordCard } from '../types';
 import {
   X,
   Moon,
@@ -26,6 +26,8 @@ import {
   Feather,
   Bell,
   Trash2,
+  MessageSquareQuote,
+  Clock,
 } from 'lucide-react';
 import { soundManager } from '../utils/soundManager';
 import {
@@ -45,6 +47,10 @@ interface SettingsModalProps {
   onImportData: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onLoadPresetSwords: () => void;
   onLoadPresetNeiban?: () => void;
+  wordCards?: WordCard[];
+  onOpenWordCardModal?: () => void;
+  onUploadWordCards?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTriggerBubbleTest?: () => void;
   showToast: (msg: string) => void;
 }
 
@@ -113,6 +119,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onImportData,
   onLoadPresetSwords,
   onLoadPresetNeiban,
+  wordCards,
+  onOpenWordCardModal,
+  onUploadWordCards,
+  onTriggerBubbleTest,
   showToast,
 }) => {
   const [showChangelog, setShowChangelog] = useState(false);
@@ -629,6 +639,117 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <Monitor className="w-5 h-5 text-[var(--text-muted)]" />
                 <span>顺应天时</span>
               </button>
+            </div>
+          </div>
+
+          {/* Section: 近侍言叶字卡与时段气泡问候 (Image 2 highlighted position) */}
+          <div className="space-y-3 pb-4 border-b border-[var(--border-color)]">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-[var(--header-red)] text-sm flex items-center gap-1.5 font-serif">
+                <MessageSquareQuote className="w-4 h-4 text-[var(--sakura-deep)]" />
+                近侍言叶字卡与气泡问候
+              </h4>
+              <span className="text-[11px] text-[var(--text-muted)] font-serif">
+                已收录 {wordCards?.length || 0} 振字卡
+              </span>
+            </div>
+
+            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed font-serif">
+              支持上传字卡或自定义输入字卡语库。近侍将在此字卡库中随机抽取，并每隔设定时长在左下角近侍名号上方弹出气泡问候。
+            </p>
+
+            <div className="p-3.5 rounded-xl bg-[var(--search-bg)] border border-[var(--border-color)] space-y-3">
+              {/* Toggle switch for auto bubble */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-serif font-bold text-xs text-[var(--text-color)] block">
+                    气泡问候自动弹出
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-serif">
+                    启用后近侍将定时浮现语录气泡，陪伴主殿处理政务手札
+                  </span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={config.bubbleEnabled !== false}
+                    onChange={(e) => onUpdateConfig({ bubbleEnabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--sakura-deep)]"></div>
+                </label>
+              </div>
+
+              {/* Interval customization */}
+              <div>
+                <label className="block text-[11px] font-semibold text-[var(--text-color)] mb-1.5 font-serif flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-[var(--sakura-deep)]" />
+                  <span>问候弹出间隔时长 (当前: {config.bubbleInterval || 60} 秒)</span>
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                  {[
+                    { label: '30秒', value: 30 },
+                    { label: '1分钟', value: 60 },
+                    { label: '3分钟', value: 180 },
+                    { label: '5分钟', value: 300 },
+                    { label: '10分钟', value: 600 },
+                    { label: '15分钟', value: 900 },
+                  ].map((it) => {
+                    const isSel = (config.bubbleInterval || 60) === it.value;
+                    return (
+                      <button
+                        key={it.value}
+                        type="button"
+                        onClick={() => {
+                          onUpdateConfig({ bubbleInterval: it.value });
+                          showToast(`已将气泡问候间隔调整为【${it.label}】`);
+                        }}
+                        className={`py-1.5 px-2 rounded-lg border text-center font-serif text-[11px] transition-colors cursor-pointer ${
+                          isSel
+                            ? 'border-[var(--sakura-deep)] bg-[var(--sakura-soft)] text-[var(--header-red)] font-bold shadow-2xs'
+                            : 'border-[var(--border-color)] bg-[var(--panel-color)] text-[var(--text-muted)] hover:text-[var(--text-color)]'
+                        }`}
+                      >
+                        {it.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Action buttons as drawn in Image 2: (字卡输入) 导入 */}
+            <div className="flex flex-wrap gap-2.5 items-center">
+              <button
+                type="button"
+                onClick={onOpenWordCardModal}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--sakura-soft)] border border-[var(--sakura-pink)] text-[var(--sakura-deep)] hover:bg-[var(--sakura-pink)]/40 font-serif font-bold text-xs cursor-pointer shadow-2xs transition-colors"
+              >
+                <MessageSquareQuote className="w-3.5 h-3.5" />
+                <span>自定义输入字卡 (弹窗录入与管理)</span>
+              </button>
+
+              <label className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--search-bg)] border border-[var(--border-color)] text-[var(--text-color)] hover:border-[var(--sakura-deep)] font-serif text-xs font-medium cursor-pointer shadow-2xs transition-colors">
+                <Upload className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
+                <span>上传字卡文件 (TXT/JSON)</span>
+                <input
+                  type="file"
+                  accept=".txt,.json"
+                  onChange={onUploadWordCards}
+                  className="hidden"
+                />
+              </label>
+
+              {onTriggerBubbleTest && (
+                <button
+                  type="button"
+                  onClick={onTriggerBubbleTest}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--search-bg)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-color)] font-serif text-xs cursor-pointer transition-colors"
+                  title="立即测试左下角近侍气泡"
+                >
+                  <span>💬 立即抽取气泡</span>
+                </button>
+              )}
             </div>
           </div>
 

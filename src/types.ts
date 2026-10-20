@@ -187,6 +187,14 @@ export type SceneryType = 'none' | 'sakura' | 'maple' | 'snow' | 'firefly';
 
 export type AmbientSoundType = 'windbell' | 'paper' | 'brush' | 'rain' | 'custom';
 
+export interface WordCard {
+  id: string;
+  text: string;
+  author?: string; // 刀剑男士名讳或出处，如 "山姥切国广"
+  category?: string; // 语录类别，如 "问候" | "激励" | "日常" | "出阵" | "玄学"
+  createdAt?: string; // 记录时间
+}
+
 export interface BenwanConfig {
   confirmDelete: boolean;
   theme: 'light' | 'dark' | 'system';
@@ -200,6 +208,9 @@ export interface BenwanConfig {
   honmaruName?: string; // 自定义本丸名字 (例如: "大和", "浅樱", "相模")
   saniwaName?: string; // 审神者尊号 (例如: "审神者", "主殿")
   hasInitializedProfile?: boolean; // 是否已完成初次就任引导登记
+  bubbleEnabled?: boolean; // 是否启用近侍气泡问候 (默认开启 true)
+  bubbleInterval?: number; // 气泡自动弹出间隔秒数 (默认 60 秒)
+  bubbleDuration?: number; // 气泡停留时长秒数 (默认 12 秒)
 }
 
 export interface Assistant {
