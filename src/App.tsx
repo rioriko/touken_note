@@ -16,6 +16,8 @@ import {
   ColorTheme,
   ForgeRecipe,
   WordCard,
+  KiwameInventory,
+  KiwameRecord,
 } from './types';
 import {
   INITIAL_NOTES,
@@ -32,6 +34,7 @@ import {
   REFERENCE_FORGE_RECIPES,
 } from './presetData';
 import { DEFAULT_WORD_CARDS } from './wordCardData';
+import { DEFAULT_KIWAME_INVENTORY, DEFAULT_KIWAME_RECORDS } from './kiwameData';
 import { APP_DEFAULT_ABOUT } from './changelogData';
 import { Header } from './components/Header';
 import { NotesSection } from './components/NotesSection';
@@ -61,6 +64,8 @@ export default function App() {
   const [forgeRecords, setForgeRecords] = useState<ForgeRecord[]>([]);
   const [dismantleRecords, setDismantleRecords] = useState<DismantleRecord[]>([]);
   const [forgeRecipes, setForgeRecipes] = useState<ForgeRecipe[]>(INITIAL_FORGE_RECIPES);
+  const [kiwameInventory, setKiwameInventory] = useState<KiwameInventory>(DEFAULT_KIWAME_INVENTORY);
+  const [kiwameRecords, setKiwameRecords] = useState<KiwameRecord[]>(DEFAULT_KIWAME_RECORDS);
   const [weeklyPlanner, setWeeklyPlanner] = useState<WeeklyPlannerData>(INITIAL_WEEKLY_PLANNER);
   const [activeMainView, setActiveMainView] = useState<'notes' | 'planner'>('notes');
   const [config, setConfig] = useState<BenwanConfig>({
@@ -331,6 +336,27 @@ export default function App() {
         }
       } else {
         setWordCards(DEFAULT_WORD_CARDS);
+      }
+
+      // Load kiwame inventory & records from localStorage
+      const savedKiwameInv = localStorage.getItem('benwan_kiwame_inventory');
+      if (savedKiwameInv) {
+        try {
+          const parsedInv = JSON.parse(savedKiwameInv);
+          if (parsedInv && typeof parsedInv.travelOutfit === 'number') {
+            setKiwameInventory(parsedInv);
+          }
+        } catch {}
+      }
+
+      const savedKiwameRecs = localStorage.getItem('benwan_kiwame_records');
+      if (savedKiwameRecs) {
+        try {
+          const parsedRecs = JSON.parse(savedKiwameRecs);
+          if (Array.isArray(parsedRecs)) {
+            setKiwameRecords(parsedRecs);
+          }
+        } catch {}
       }
 
       const savedConfig = localStorage.getItem('benwan_config');
@@ -886,6 +912,8 @@ export default function App() {
       forgeRecipes,
       weeklyPlanner,
       wordCards,
+      kiwameInventory,
+      kiwameRecords,
       config,
       assistant,
       exportedAt: new Date().toISOString(),
@@ -942,6 +970,12 @@ export default function App() {
           if (imported.wordCards && Array.isArray(imported.wordCards)) {
             saveWordCardsToStorage(imported.wordCards);
           }
+          if (imported.kiwameInventory) {
+            saveKiwameInventoryToStorage(imported.kiwameInventory);
+          }
+          if (imported.kiwameRecords && Array.isArray(imported.kiwameRecords)) {
+            saveKiwameRecordsToStorage(imported.kiwameRecords);
+          }
           if (imported.config) {
             handleUpdateConfig(imported.config);
           }
@@ -964,6 +998,100 @@ export default function App() {
   const saveWeeklyPlannerToStorage = (updated: WeeklyPlannerData) => {
     setWeeklyPlanner(updated);
     localStorage.setItem('benwan_planner', JSON.stringify(updated));
+  };
+
+  // Kiwame & Cultivation Handlers
+  const saveKiwameInventoryToStorage = (inv: KiwameInventory) => {
+    setKiwameInventory(inv);
+    localStorage.setItem('benwan_kiwame_inventory', JSON.stringify(inv));
+  };
+
+  const saveKiwameRecordsToStorage = (recs: KiwameRecord[]) => {
+    setKiwameRecords(recs);
+    localStorage.setItem('benwan_kiwame_records', JSON.stringify(recs));
+  };
+
+  const handleAddKiwameRecord = (record: Omit<KiwameRecord, 'id'>, deductItems: boolean = true) => {
+    const newEntry: KiwameRecord = {
+      id: `kiwame-${Date.now()}`,
+      ...record,
+    };
+    const updatedRecords = [newEntry, ...kiwameRecords];
+    saveKiwameRecordsToStorage(updatedRecords);
+
+    // Deduct 1 set of items if requested
+    if (deductItems) {
+      const newOutfit = Math.max(0, kiwameInventory.travelOutfit - 1);
+      const newGear = Math.max(0, kiwameInventory.travelGear - 1);
+      const newLetters = Math.max(0, kiwameInventory.letters - 1);
+      const updatedInv: KiwameInventory = {
+        ...kiwameInventory,
+        travelOutfit: newOutfit,
+        travelGear: newGear,
+        letters: newLetters,
+        logs: [
+          {
+            id: `log-${Date.now()}`,
+            date: new Date().toISOString().split('T')[0],
+            type: 'consume',
+            itemName: '整套三宝',
+            count: 1,
+            reason: `准许【${record.swordName}】出门极化修行`,
+          },
+          ...(kiwameInventory.logs || []),
+        ],
+      };
+      saveKiwameInventoryToStorage(updatedInv);
+    }
+  };
+
+  const handleUpdateKiwameRecord = (record: KiwameRecord) => {
+    const updated = kiwameRecords.map((r) => (r.id === record.id ? record : r));
+    saveKiwameRecordsToStorage(updated);
+  };
+
+  const handleDeleteKiwameRecord = (id: string) => {
+    const updated = kiwameRecords.filter((r) => r.id !== id);
+    saveKiwameRecordsToStorage(updated);
+  };
+
+  const handleCompleteKiwame = (id: string) => {
+    const target = kiwameRecords.find((r) => r.id === id);
+    const updated = kiwameRecords.map((r) => {
+      if (r.id === id) {
+        return {
+          ...r,
+          status: 'completed' as const,
+          completedAt: new Date().toISOString(),
+        };
+      }
+      return r;
+    });
+    saveKiwameRecordsToStorage(updated);
+
+    // If sword is in daozhang, update status or level note
+    if (target) {
+      const existingIdx = daozhangRecords.findIndex((d) => d.name === target.swordName.trim());
+      if (existingIdx >= 0) {
+        const current = daozhangRecords[existingIdx];
+        const updatedSword: DaozhangRecord = {
+          ...current,
+          level: target.estimatedKiwameLevel ? `极 ${target.estimatedKiwameLevel}` : `极`,
+          memoEntries: [
+            {
+              id: `memo-${Date.now()}`,
+              date: new Date().toISOString().split('T')[0],
+              category: '互动小记',
+              content: `历经96小时远行淬炼，极化修行圆满归丸！心志焕然一新。`,
+            },
+            ...(current.memoEntries || []),
+          ],
+        };
+        const updatedDz = [...daozhangRecords];
+        updatedDz[existingIdx] = updatedSword;
+        saveDaozhangToStorage(updatedDz);
+      }
+    }
   };
 
   // Word Cards & Attendant Bubble Handlers
@@ -1183,6 +1311,8 @@ export default function App() {
             forgeRecords={forgeRecords}
             dismantleRecords={dismantleRecords}
             forgeRecipes={forgeRecipes}
+            kiwameInventory={kiwameInventory}
+            kiwameRecords={kiwameRecords}
             dailyFortune={dailyFortune}
             honmaruName={config.honmaruName || '大和'}
             saniwaName={config.saniwaName || '主殿'}
@@ -1208,6 +1338,11 @@ export default function App() {
             onDeleteForgeRecipe={handleDeleteForgeRecipe}
             onLoadReferenceRecipes={handleLoadReferenceRecipes}
             onClearForgeRecipes={handleClearForgeRecipes}
+            onUpdateKiwameInventory={saveKiwameInventoryToStorage}
+            onAddKiwameRecord={handleAddKiwameRecord}
+            onUpdateKiwameRecord={handleUpdateKiwameRecord}
+            onDeleteKiwameRecord={handleDeleteKiwameRecord}
+            onCompleteKiwame={handleCompleteKiwame}
             onOpenDaozhang={() => setIsDaozhangOpen(true)}
             showToast={showToast}
           />

@@ -21,6 +21,8 @@ import {
 import { soundManager } from '../utils/soundManager';
 import { ExpeditionSection } from './ExpeditionSection';
 import { ForgeSection } from './ForgeSection';
+import { KiwameSection } from './KiwameSection';
+import { KiwameInventory, KiwameRecord } from '../types';
 import {
   Search,
   Sparkles,
@@ -53,6 +55,8 @@ interface NotesSectionProps {
   forgeRecords?: ForgeRecord[];
   dismantleRecords?: DismantleRecord[];
   forgeRecipes?: ForgeRecipe[];
+  kiwameInventory?: KiwameInventory;
+  kiwameRecords?: KiwameRecord[];
   dailyFortune?: DailyFortune;
   saniwaName?: string;
   honmaruName?: string;
@@ -78,6 +82,11 @@ interface NotesSectionProps {
   onDeleteForgeRecipe?: (id: string) => void;
   onLoadReferenceRecipes?: () => void;
   onClearForgeRecipes?: () => void;
+  onUpdateKiwameInventory?: (inventory: KiwameInventory) => void;
+  onAddKiwameRecord?: (record: Omit<KiwameRecord, 'id'>, deductItems?: boolean) => void;
+  onUpdateKiwameRecord?: (record: KiwameRecord) => void;
+  onDeleteKiwameRecord?: (id: string) => void;
+  onCompleteKiwame?: (id: string) => void;
   onOpenDaozhang?: () => void;
   showToast: (msg: string) => void;
 }
@@ -90,6 +99,8 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   forgeRecords = [],
   dismantleRecords = [],
   forgeRecipes = [],
+  kiwameInventory,
+  kiwameRecords = [],
   dailyFortune,
   saniwaName = '主殿',
   honmaruName = '大和',
@@ -115,6 +126,11 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   onDeleteForgeRecipe,
   onLoadReferenceRecipes,
   onClearForgeRecipes,
+  onUpdateKiwameInventory,
+  onAddKiwameRecord,
+  onUpdateKiwameRecord,
+  onDeleteKiwameRecord,
+  onCompleteKiwame,
   onOpenDaozhang,
   showToast,
 }) => {
@@ -122,6 +138,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   const [activeMainFilter, setActiveMainFilter] = useState<string>('全部');
   const [activeBattleFilter, setActiveBattleFilter] = useState<string>('全部');
   const [activeNeibanFilter, setActiveNeibanFilter] = useState<string>('全部');
+  const [activeKiwameSubFilter, setActiveKiwameSubFilter] = useState<'道具' | '经验值' | '列表'>('道具');
 
   // Neiban Form State
   const [neibanDate, setNeibanDate] = useState<string>(
@@ -264,6 +281,10 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
       return noteTag === '锻刀' || noteTag === '刀解';
     }
 
+    if (activeMainFilter === '修行') {
+      return noteTag === '修行' || noteTag.includes('修行') || noteTag.includes('极化');
+    }
+
     return noteTag === activeMainFilter;
   });
 
@@ -352,6 +373,10 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
         return 'bg-orange-700 text-white';
       case '刀装':
         return 'bg-slate-700 text-white';
+      case '锻刀':
+        return 'bg-amber-700 text-white';
+      case '修行':
+        return 'bg-rose-700 text-white';
       case '日常':
       default:
         return 'bg-stone-500 text-white';
@@ -384,13 +409,14 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
 
         {/* Primary Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          {['全部', '日常', '内番', '战斗', '远征战报', '刀装', '锻刀'].map((tag) => (
+          {['全部', '日常', '内番', '战斗', '远征战报', '刀装', '锻刀', '修行'].map((tag) => (
             <button
               key={tag}
               onClick={() => {
                 setActiveMainFilter(tag);
                 if (tag === '战斗') setActiveBattleFilter('全部');
                 if (tag === '内番') setActiveNeibanFilter('全部');
+                if (tag === '修行') setActiveKiwameSubFilter('道具');
               }}
               className={`px-3 py-1.5 rounded-lg whitespace-nowrap text-xs transition-colors cursor-pointer ${
                 activeMainFilter === tag
@@ -406,12 +432,12 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
         {/* Secondary Sub-Filter: Battle */}
         {activeMainFilter === '战斗' && (
           <div className="flex items-center gap-1.5 pt-2 border-t border-[var(--border-color)] overflow-x-auto text-xs animate-fadeIn">
-            <span className="text-[var(--text-muted)] text-[11px] shrink-0">战斗分类:</span>
+            <span className="text-[var(--text-muted)] text-[11px] shrink-0 font-serif">战斗分类:</span>
             {['全部', '出征', '远征', '演练'].map((sub) => (
               <button
                 key={sub}
                 onClick={() => setActiveBattleFilter(sub)}
-                className={`px-2.5 py-1 rounded-md text-[11px] transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md text-[11px] font-serif transition-colors cursor-pointer ${
                   activeBattleFilter === sub
                     ? 'bg-[var(--sakura-deep)] text-white font-medium shadow-2xs'
                     : 'border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-color)]'
@@ -426,18 +452,38 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
         {/* Secondary Sub-Filter: Neiban */}
         {activeMainFilter === '内番' && (
           <div className="flex items-center gap-1.5 pt-2 border-t border-[var(--border-color)] overflow-x-auto text-xs animate-fadeIn">
-            <span className="text-[var(--text-muted)] text-[11px] shrink-0">当番项目:</span>
+            <span className="text-[var(--text-muted)] text-[11px] shrink-0 font-serif">当番项目:</span>
             {['全部', '马当番', '畑当番', '手合场', '寝当番'].map((sub) => (
               <button
                 key={sub}
                 onClick={() => setActiveNeibanFilter(sub)}
-                className={`px-2.5 py-1 rounded-md text-[11px] transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md text-[11px] font-serif transition-colors cursor-pointer ${
                   activeNeibanFilter === sub
                     ? 'bg-[var(--sakura-deep)] text-white font-medium shadow-2xs'
                     : 'border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-color)]'
                 }`}
               >
                 {sub === '全部' ? '全部内番' : sub}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Secondary Sub-Filter: Kiwame (修行) */}
+        {activeMainFilter === '修行' && (
+          <div className="flex items-center gap-1.5 pt-2 border-t border-[var(--border-color)] overflow-x-auto text-xs animate-fadeIn">
+            <span className="text-[var(--text-muted)] text-[11px] shrink-0 font-serif">修行分类:</span>
+            {(['道具', '经验值', '列表'] as const).map((sub) => (
+              <button
+                key={sub}
+                onClick={() => setActiveKiwameSubFilter(sub)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-serif transition-colors cursor-pointer ${
+                  activeKiwameSubFilter === sub
+                    ? 'bg-[var(--sakura-deep)] text-white font-bold shadow-2xs'
+                    : 'border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-color)]'
+                }`}
+              >
+                {sub}
               </button>
             ))}
           </div>
@@ -1061,14 +1107,33 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
         />
       )}
 
+      {/* Special Module 5: 极化与修行库房模块 (When '修行' is selected) */}
+      {activeMainFilter === '修行' && kiwameInventory && (
+        <KiwameSection
+          inventory={kiwameInventory}
+          onUpdateInventory={onUpdateKiwameInventory || (() => {})}
+          records={kiwameRecords || []}
+          onAddRecord={onAddKiwameRecord || (() => {})}
+          onUpdateRecord={onUpdateKiwameRecord || (() => {})}
+          onDeleteRecord={onDeleteKiwameRecord || (() => {})}
+          onCompleteKiwame={onCompleteKiwame || (() => {})}
+          daozhangRecords={daozhangRecords}
+          subFilter={activeKiwameSubFilter}
+          onSelectSubFilter={setActiveKiwameSubFilter}
+          showToast={showToast}
+        />
+      )}
+
       {/* Notes List */}
       <div className="space-y-3">
         {filteredNotes.length === 0 ? (
-          <div className="py-16 text-center border border-dashed border-[var(--border-color)] rounded-xl bg-[var(--panel-color)]">
-            <p className="text-sm text-[var(--text-muted)] font-serif italic">
-              「{honmaruName}_本丸尚无奏帖。{saniwaName}，请下达指示。」
-            </p>
-          </div>
+          activeMainFilter !== '锻刀' && activeMainFilter !== '修行' && (
+            <div className="py-16 text-center border border-dashed border-[var(--border-color)] rounded-xl bg-[var(--panel-color)]">
+              <p className="text-sm text-[var(--text-muted)] font-serif italic">
+                「{honmaruName}_本丸尚无奏帖。{saniwaName}，请下达指示。」
+              </p>
+            </div>
+          )
         ) : (
           filteredNotes.map((note) => (
             <div

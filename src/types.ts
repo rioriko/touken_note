@@ -10,7 +10,8 @@ export type NoteTag =
   | '演练'
   | '刀装'
   | '锻刀'
-  | '刀解';
+  | '刀解'
+  | '修行';
 
 export interface Note {
   id: string;
@@ -248,3 +249,40 @@ export const COMMON_SCHOOLS = [
   '一文字',
   '无铭',
 ];
+
+// ================= KIWAME & CULTIVATION (极化与修行) =================
+export interface KiwameItemLog {
+  id: string;
+  date: string;
+  type: 'gain' | 'consume';
+  itemName: string; // "旅装束" | "旅道具" | "手纸一式" | "整套三宝"
+  count: number;
+  reason?: string; // e.g. "活动报酬入库", "派遣加州清光极化修行"
+}
+
+export interface KiwameInventory {
+  travelOutfit: number; // 旅装束存量
+  travelGear: number;   // 旅道具存量
+  letters: number;      // 手纸一式存量
+  logs?: KiwameItemLog[];
+}
+
+export interface KiwameLetters {
+  day1?: string; // 第一天信件
+  day2?: string; // 第二天信件
+  day3?: string; // 第三天信件
+}
+
+export interface KiwameRecord {
+  id: string;
+  swordName: string;
+  swordType: SwordType | string;
+  departedAt: string; // 出发时间 (ISO 格式)
+  completedAt?: string; // 归来/完成时间
+  status: 'traveling' | 'completed'; // 修行中 (96小时倒计时) | 已归还
+  letters: KiwameLetters;
+  departureLevel?: number | string; // 出门等级 (如 99 或 60)
+  accumulatedExp?: number; // 累积经验
+  estimatedKiwameLevel?: number; // 预估极化等级
+  notes?: string; // 审神者寄语/备忘
+}
