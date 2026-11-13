@@ -208,6 +208,11 @@ export interface BenwanConfig {
   about: string;
   honmaruName?: string; // 自定义本丸名字 (例如: "大和", "浅樱", "相模")
   saniwaName?: string; // 审神者尊号 (例如: "审神者", "主殿")
+  saniwaTitle?: string; // 审神者称号 / 官阶 (例如: "时之政府特任审神者")
+  saniwaMotto?: string; // 审神者就任宣言 / 座右铭
+  appointedDate?: string; // 就任日期 YYYY-MM-DD (可选，未填则不强制计算天数)
+  crestSchool?: string; // 选用的本丸名片家纹底纹
+  honmaruRegion?: string; // 本丸所在国度 / 服务器 (例如: "山城国", "备前国")
   hasInitializedProfile?: boolean; // 是否已完成初次就任引导登记
   bubbleEnabled?: boolean; // 是否启用近侍气泡问候 (默认开启 true)
   bubbleInterval?: number; // 气泡自动弹出间隔秒数 (默认 60 秒)

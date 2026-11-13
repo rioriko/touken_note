@@ -45,6 +45,7 @@ import { AssistantModal } from './components/AssistantModal';
 import { SettingsModal } from './components/SettingsModal';
 import { WelcomeModal } from './components/WelcomeModal';
 import { DailyFortuneModal } from './components/DailyFortuneModal';
+import { SaniwaCardModal } from './components/SaniwaCardModal';
 import { AttendantBubble } from './components/AttendantBubble';
 import { WordCardModal } from './components/WordCardModal';
 import { generateDailyFortune, DailyFortune } from './dailyFortuneData';
@@ -101,6 +102,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
   const [isFortuneModalOpen, setIsFortuneModalOpen] = useState(false);
+  const [isSaniwaCardOpen, setIsSaniwaCardOpen] = useState(false);
   const [dailyFortune, setDailyFortune] = useState<DailyFortune>(() =>
     generateDailyFortune('加州清光', '打刀')
   );
@@ -1284,6 +1286,10 @@ export default function App() {
           setIsFortuneModalOpen(true);
         }}
         onEditProfile={() => setIsWelcomeModalOpen(true)}
+        onOpenSaniwaCard={() => {
+          if (config.audioEnabled) soundManager.playInteractionSound(config.ambientSoundType, config.customAudioUrl, 'flip');
+          setIsSaniwaCardOpen(true);
+        }}
         daozhangCount={daozhangRecords.length}
         theme={config.theme}
         onToggleTheme={handleToggleTheme}
@@ -1517,6 +1523,28 @@ export default function App() {
         neibanRecords={neibanRecords}
         onRefreshQuote={handleRefreshFortune}
         honmaruName={config.honmaruName || '大和'}
+      />
+
+      <SaniwaCardModal
+        isOpen={isSaniwaCardOpen}
+        onClose={() => setIsSaniwaCardOpen(false)}
+        config={config}
+        onUpdateConfig={handleUpdateConfig}
+        assistant={assistant}
+        notes={notes}
+        neibanRecords={neibanRecords}
+        daozhangRecords={daozhangRecords}
+        treasures={treasures}
+        expeditions={expeditions}
+        forgeRecords={forgeRecords}
+        dismantleRecords={dismantleRecords}
+        forgeRecipes={forgeRecipes}
+        kiwameInventory={kiwameInventory}
+        kiwameRecords={kiwameRecords}
+        wordCards={wordCards}
+        onOpenDaozhang={() => setIsDaozhangOpen(true)}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
+        showToast={showToast}
       />
     </div>
   );

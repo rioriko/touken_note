@@ -299,24 +299,52 @@ export const KiwameSection: React.FC<KiwameSectionProps> = ({
     };
   };
 
-  // Helper component to render individual letters with progressive unlock & sealed state
+  // Helper component to render individual letters with progressive unlock & sealed state based on date difference
   const renderLetterCard = (
     rec: KiwameRecord,
     dayNumber: 1 | 2 | 3,
     dayTitle: string,
-    targetHours: number,
+    targetUnlockDay: 1 | 2 | 3, // 第1天解锁(第一封), 第2天解锁(第二封), 第3天解锁(第三封)
     letterContent: string | undefined,
     elapsedHours: number,
     elapsedMs: number
   ) => {
-    // A letter is officially delivered if the sword is marked 'completed' or elapsed time reached target hours
-    const isDelivered = rec.status === 'completed' || elapsedHours >= targetHours;
+    // 引入日期对比逻辑：根据当前日期与初始日期（记录创建/出发日期）的差值计算天数
+    const startDate = new Date(rec.departedAt);
+    const currentDate = new Date(nowTime);
+
+    // 1. 时间差（毫秒与小时）精确折算天数
+    const diffMs = Math.max(0, nowTime - (isNaN(startDate.getTime()) ? nowTime : startDate.getTime()));
+    const diffHours = diffMs / (1000 * 3600);
+    const exactDaysPassed = diffHours / 24;
+
+    // 2. 自然日跨度天数对比 (比较年月日，跨过零点即算作第二天)
+    const startMidnight = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()).getTime();
+    const currentMidnight = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).getTime();
+    const calendarDiffDays = isNaN(startMidnight)
+      ? 0
+      : Math.max(0, Math.floor((currentMidnight - startMidnight) / (1000 * 3600 * 24)));
+
+    // 当前修行的天数序列：
+    // 第1天：出发当天 (0 <= diffHours < 24)
+    // 第2天：满24小时 或 自然日隔天 (diffHours >= 24 或 calendarDiffDays >= 1)
+    // 第3天：满48小时 或 跨入第3天 (diffHours >= 48 或 calendarDiffDays >= 2)
+    // 第4天：满72小时 或 跨入第4天 (diffHours >= 72 或 calendarDiffDays >= 3)
+    const currentDay = Math.max(1, Math.floor(exactDaysPassed) + 1, calendarDiffDays + 1);
+
+    // 解锁规则：
+    // 第一封信：第1天即解锁 (targetUnlockDay = 1, currentDay >= 1，始终解锁)
+    // 第二封信：第2天解锁 (targetUnlockDay = 2, currentDay >= 2，即满24小时或自然日隔天)
+    // 第三封信：第3天解锁 (targetUnlockDay = 3, currentDay >= 3，即满48小时或自然日跨2天)
+    // 若已标记为圆满归丸 (rec.status === 'completed')，则全部永久解锁
+    const isDelivered = rec.status === 'completed' || currentDay >= targetUnlockDay;
     const letterKey = `${rec.id}-day${dayNumber}`;
     const isPreviewed = !!previewedLetters[letterKey];
 
-    // Calculate countdown to delivery
-    const targetMs = targetHours * 3600 * 1000;
-    const remMs = Math.max(0, targetMs - elapsedMs);
+    // 计算距离该封信解锁所需的剩余时长 (第2天需满24小时，第3天需满48小时)
+    const requiredHours = (targetUnlockDay - 1) * 24;
+    const targetMs = requiredHours * 3600 * 1000;
+    const remMs = Math.max(0, targetMs - diffMs);
     const totalSecs = Math.floor(remMs / 1000);
     const remH = Math.floor(totalSecs / 3600);
     const remM = Math.floor((totalSecs % 3600) / 60);
@@ -346,28 +374,37 @@ export const KiwameSection: React.FC<KiwameSectionProps> = ({
           ) : (
             <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-[10px] font-mono flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              在途投递中 (约剩 {remH}小时{remM}分{remS}秒)
+              封缄在途中 (第 {targetUnlockDay} 天解锁 · 约剩 {remH}h {remM}m {remS}s)
             </span>
           )}
         </div>
 
-        {isDelivered ? (
-          <div className="pt-2.5 pl-1">
+        {/* 当已解锁送达时：显示真实信件文本 (完全不应用 hidden，opacity 为 100%) */}
+        {isDelivered && (
+          <div className="pt-2.5 pl-1 transition-opacity duration-300 opacity-100">
             <p className="font-serif leading-relaxed text-[var(--text-color)] whitespace-pre-wrap opacity-95 text-xs">
               {letterContent || '（暂无书信文本）'}
             </p>
           </div>
-        ) : (
-          <div className="pt-3 pb-1 text-center space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--panel-color)] border border-[var(--border-color)] text-[11px] font-serif text-[var(--text-muted)] shadow-2xs">
-              <Lock className="w-3 h-3 text-amber-500" />
-              <span className="font-bold text-[var(--text-color)]">鸿雁传书驿路疾驰中 · 尚在封缄中</span>
-              <span className="font-mono text-[10px] opacity-75">(需历练满 {targetHours} 小时送达)</span>
+        )}
+
+        {/* 当未解锁时：展示醒目的“信封封缄中”提示，并通过 hidden / opacity 控制隐藏真实信文 */}
+        {!isDelivered && (
+          <div className="pt-3 pb-1 text-center space-y-2.5 animate-fadeIn">
+            {/* 醒目的“信封封缄中”提示 */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--panel-color)] border border-amber-300 dark:border-amber-700/80 text-xs font-serif text-amber-800 dark:text-amber-200 shadow-2xs">
+              <span className="text-base">✉️</span>
+              <span className="font-bold">信封封缄中</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-mono">
+                第 {targetUnlockDay} 天解锁
+              </span>
             </div>
+
             <p className="text-[11px] font-serif text-[var(--text-muted)] italic leading-relaxed max-w-md mx-auto">
-              “旅途山长水远，驿使疾行。倒计时到达第二/三日节点后，飞鸟方会将此信送入本丸，请审神者静候佳音……”
+              “此信尚在山水驿道封缄之中，根据出发日期与当前日期差值计算，需待修行进入第 {targetUnlockDay} 天（约还需 {remH}小时{remM}分）方送抵本丸拆阅……”
             </p>
-            <div className="pt-1">
+
+            <div className="pt-0.5">
               <button
                 type="button"
                 onClick={() => togglePreviewLetter(letterKey)}
@@ -386,17 +423,28 @@ export const KiwameSection: React.FC<KiwameSectionProps> = ({
                 )}
               </button>
             </div>
+
             {isPreviewed && (
               <div className="mt-2.5 p-3 rounded-xl bg-[var(--panel-color)] border border-amber-300 dark:border-amber-800 text-left animate-fadeIn space-y-1.5 shadow-2xs">
                 <div className="flex items-center justify-between text-[10px] text-amber-700 dark:text-amber-400 font-serif font-bold">
                   <span>【先行检视 · 草稿内容预览】</span>
-                  <span className="font-mono text-[9px] opacity-80">尚在路上未送抵，仅供预读</span>
+                  <span className="font-mono text-[9px] opacity-80">当前处于封缄期，仅供预读</span>
                 </div>
                 <p className="font-serif leading-relaxed text-[var(--text-color)] whitespace-pre-wrap text-xs pl-1 opacity-90 border-t border-[var(--border-color)]/50 pt-1.5">
                   {letterContent || '（暂无草稿内容）'}
                 </p>
               </div>
             )}
+
+            {/* 动态控制未解锁信文的 hidden 状态与 opacity (严格封缄) */}
+            <div
+              className={`pt-1 text-left ${
+                isPreviewed ? 'hidden' : 'hidden opacity-0 pointer-events-none select-none h-0 overflow-hidden'
+              }`}
+              aria-hidden="true"
+            >
+              {letterContent}
+            </div>
           </div>
         )}
       </div>
@@ -1057,14 +1105,14 @@ export const KiwameSection: React.FC<KiwameSectionProps> = ({
 
                         {isExpanded && (
                           <div className="p-3 border-t border-[var(--border-color)] space-y-3 bg-[var(--search-bg)]/40 text-xs animate-fadeIn">
-                            {/* Letter 1: 抵至修行地 (Day 1: 满24小时送达) */}
-                            {renderLetterCard(rec, 1, '抵至修行地', 24, rec.letters?.day1, cd.elapsedHours, cd.elapsedMs)}
+                            {/* Letter 1: 抵至修行地 (Day 1: 第1天即刻解锁) */}
+                            {renderLetterCard(rec, 1, '抵至修行地', 1, rec.letters?.day1, cd.elapsedHours, cd.elapsedMs)}
 
-                            {/* Letter 2: 溯源旧主情 (Day 2: 满48小时送达) */}
-                            {renderLetterCard(rec, 2, '溯源旧主情', 48, rec.letters?.day2, cd.elapsedHours, cd.elapsedMs)}
+                            {/* Letter 2: 溯源旧主情 (Day 2: 第2天解锁) */}
+                            {renderLetterCard(rec, 2, '溯源旧主情', 2, rec.letters?.day2, cd.elapsedHours, cd.elapsedMs)}
 
-                            {/* Letter 3: 悟道展新芒 (Day 3: 满72小时送达) */}
-                            {renderLetterCard(rec, 3, '悟道展新芒', 72, rec.letters?.day3, cd.elapsedHours, cd.elapsedMs)}
+                            {/* Letter 3: 悟道展新芒 (Day 3: 第3天解锁) */}
+                            {renderLetterCard(rec, 3, '悟道展新芒', 3, rec.letters?.day3, cd.elapsedHours, cd.elapsedMs)}
                           </div>
                         )}
                       </div>
@@ -1145,9 +1193,9 @@ export const KiwameSection: React.FC<KiwameSectionProps> = ({
 
                       {isCompExpanded && (
                         <div className="space-y-2 pt-1 animate-fadeIn text-xs">
-                          {renderLetterCard(comp, 1, '抵至修行地', 24, comp.letters?.day1, 999, 999 * 3600000)}
-                          {renderLetterCard(comp, 2, '溯源旧主情', 48, comp.letters?.day2, 999, 999 * 3600000)}
-                          {renderLetterCard(comp, 3, '悟道展新芒', 72, comp.letters?.day3, 999, 999 * 3600000)}
+                          {renderLetterCard(comp, 1, '抵至修行地', 1, comp.letters?.day1, 999, 999 * 3600000)}
+                          {renderLetterCard(comp, 2, '溯源旧主情', 2, comp.letters?.day2, 999, 999 * 3600000)}
+                          {renderLetterCard(comp, 3, '悟道展新芒', 3, comp.letters?.day3, 999, 999 * 3600000)}
                         </div>
                       )}
                     </div>

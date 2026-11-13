@@ -11,6 +11,7 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onOpenFortune?: () => void;
   onEditProfile: () => void;
+  onOpenSaniwaCard?: () => void;
   daozhangCount: number;
   theme: 'light' | 'dark' | 'system';
   onToggleTheme: () => void;
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
   onOpenFortune,
   onEditProfile,
+  onOpenSaniwaCard,
   daozhangCount,
   theme,
   onToggleTheme,
@@ -40,24 +42,33 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="px-3 sm:px-5 py-2 sm:py-2.5 bg-[var(--panel-color)] border-b-2 border-[var(--sakura-pink)] shadow-xs sticky top-0 z-30 flex flex-col transition-colors gap-1">
       {/* Primary Top Bar */}
       <div className="flex items-center justify-between w-full gap-2">
-        {/* Zone 1: Brand Wordmark: [honmaruName_本丸] + saniwaName as subtitle */}
-        <div
-          onClick={onEditProfile}
-          title="点击重新编定本丸与主殿名号"
-          className="flex flex-col justify-center cursor-pointer group min-w-0 flex-1 max-w-[160px] sm:max-w-none"
+        {/* Zone 1: Brand Wordmark & Saniwa Card Entry */}
+        <button
+          type="button"
+          onClick={onOpenSaniwaCard || onEditProfile}
+          title="点击展开审神者本丸名片与战绩总览"
+          className="flex flex-col justify-center text-left cursor-pointer group min-w-0 flex-1 max-w-[175px] sm:max-w-none rounded-lg px-1.5 py-0.5 -ml-1.5 hover:bg-[var(--sakura-soft)]/50 transition-colors"
         >
-          <div className="text-base sm:text-lg font-black tracking-wide text-[var(--header-red)] font-serif leading-tight group-hover:opacity-85 transition-opacity break-words">
-            {displayHonmaru}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-base sm:text-lg font-black tracking-wide text-[var(--header-red)] font-serif leading-tight group-hover:opacity-90 transition-opacity truncate">
+              {displayHonmaru}
+            </span>
+            <span
+              className="inline-flex items-center justify-center px-1 py-0.5 rounded-xs border border-[var(--header-red)]/50 text-[9px] leading-none font-serif font-bold text-[var(--header-red)] bg-[var(--sakura-soft)]/70 shrink-0 group-hover:bg-[var(--header-red)] group-hover:text-white transition-colors"
+              aria-hidden="true"
+            >
+              名帖
+            </span>
           </div>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[10px] sm:text-[11px] text-[var(--text-muted)] font-serif truncate max-w-[130px] sm:max-w-[200px]">
+          <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+            <span className="text-[10px] sm:text-[11px] text-[var(--text-muted)] font-serif truncate max-w-[130px] sm:max-w-[220px]">
               {saniwaName ? `主: ${saniwaName}` : '审神者'}
             </span>
-            <span className="hidden xl:inline-block text-[10px] text-[var(--text-muted)] tracking-wider">
-              · 奏帖手札与刀账
+            <span className="hidden xl:inline-block text-[10px] text-[var(--text-muted)] tracking-wider whitespace-nowrap">
+              · 本丸名片与手札
             </span>
           </div>
-        </div>
+        </button>
 
         {/* Zone 1.5: Desktop-only Central Mode Switcher: 奏帖便签 vs 周度手札 */}
         <div className="hidden md:flex items-center p-1 rounded-xl bg-[var(--search-bg)] border border-[var(--border-color)] text-xs font-serif shrink-0 shadow-2xs">
